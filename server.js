@@ -2,7 +2,6 @@ import 'dotenv/config';
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
-import { createRecurringCharge, checkSubscriptionStatus, requireSubscription, cancelSubscription } from './billing.js';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -81,7 +80,7 @@ app.get('/api/billing/status', async (req, res) => {
 // ===== END BILLING ROUTES =====
 
 // API: Get all rules for a shop
-app.get('/api/rules', requireSubscription, async (req, res) => {
+app.get('/api/rules', async (req, res) => {
   try {
     const shop = req.query.shop || 'test-shop';
     
