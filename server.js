@@ -318,6 +318,45 @@ app.post('/api/validate-cart', async (req, res) => {
   }
 });
 
+// API: Search products (for admin dashboard)
+app.get('/api/products/search', async (req, res) => {
+  try {
+    const shop = req.query.shop || 'test-shop';
+    const query = req.query.q || '';
+    
+    // For now, return mock data
+    // Later we'll connect to Shopify API to fetch real products
+    const mockProducts = [
+      {
+        id: '10218250895679',
+        title: 'The Inventory Not Tracked Snowboard',
+        image: 'https://cdn.shopify.com/...',
+        variants: [
+          { id: '51819278729535', title: 'Default' }
+        ]
+      },
+      {
+        id: '10218250895680',
+        title: 'Selling Plans Ski Wax',
+        image: 'https://cdn.shopify.com/...',
+        variants: [
+          { id: '51819278860607', title: 'Default' }
+        ]
+      }
+    ];
+    
+    // Filter by search query
+    const filtered = mockProducts.filter(p => 
+      p.title.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    res.json({ success: true, products: filtered });
+  } catch (error) {
+    console.error('Error searching products:', error);
+    res.status(500).json({ success: false, error: 'Failed to search products' });
+  }
+});
+
 // Initialize database on first run
 async function initializeDatabase() {
   try {
