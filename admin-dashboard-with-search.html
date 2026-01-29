@@ -53,6 +53,7 @@
 
         .form-group {
             margin-bottom: 20px;
+            position: relative;
         }
 
         label {
@@ -247,16 +248,6 @@
             font-size: 13px;
             color: #6d7175;
             margin-top: 4px;
-            line-height: 1.5;
-        }
-
-        .help-text code {
-            background: #f4f6f8;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: Monaco, Consolas, monospace;
-            font-size: 12px;
-            color: #bf0711;
         }
 
         .loading {
@@ -269,6 +260,111 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
+        }
+
+        /* Product Search Autocomplete */
+        .autocomplete-wrapper {
+            position: relative;
+        }
+
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #c9cccf;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .autocomplete-results.active {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f2f3;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .autocomplete-item:hover {
+            background: #f9fafb;
+        }
+
+        .autocomplete-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .autocomplete-item-text {
+            flex: 1;
+        }
+
+        .autocomplete-item-title {
+            font-weight: 500;
+            font-size: 14px;
+            color: #202223;
+        }
+
+        .autocomplete-item-id {
+            font-size: 12px;
+            color: #6d7175;
+        }
+
+        .selected-product {
+            display: none;
+            padding: 12px;
+            background: #f9fafb;
+            border: 1px solid #e1e3e5;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+
+        .selected-product.active {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .selected-product img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .selected-product-info {
+            flex: 1;
+        }
+
+        .selected-product-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #202223;
+        }
+
+        .selected-product-id {
+            font-size: 12px;
+            color: #6d7175;
+            margin-top: 2px;
+        }
+
+        .remove-product {
+            color: #d82c0d;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 4px 8px;
         }
 
         @media (max-width: 768px) {
@@ -309,28 +405,29 @@
                         <label for="rule-type">Rule Type</label>
                         <select id="rule-type" required>
                             <option value="product">Product</option>
-                            <option value="collection">Collection</option>
                             <option value="variant">Variant</option>
                             <option value="cart">Cart-wide</option>
                         </select>
                         <div class="help-text">Choose what this limit applies to</div>
                     </div>
 
-                    <div class="form-group" id="target-group">
-                        <label for="target-id">Product ID Number</label>
-                        <input type="text" id="target-id" placeholder="e.g., 10218250895679">
-                        <div class="help-text">
-                            📝 <strong>How to find:</strong> Go to Products → Click a product → Look at the URL
-                            <br>Example: <code>admin.shopify.com/store/my-store/products/<strong>10218250895679</strong></code>
-                            <br>Copy just the number at the end
+                    <div class="form-group autocomplete-wrapper" id="product-search-group">
+                        <label for="product-search">Search Product</label>
+                        <input type="text" id="product-search" placeholder="Start typing to search products...">
+                        <div class="autocomplete-results" id="autocomplete-results"></div>
+                        <div class="selected-product" id="selected-product">
+                            <img id="selected-product-image" src="" alt="">
+                            <div class="selected-product-info">
+                                <div class="selected-product-title" id="selected-product-title"></div>
+                                <div class="selected-product-id">ID: <span id="selected-product-id"></span></div>
+                            </div>
+                            <span class="remove-product" onclick="removeSelectedProduct()">✕</span>
                         </div>
+                        <div class="help-text">Search and select a product from your store</div>
                     </div>
 
-                    <div class="form-group" id="target-title-group">
-                        <label for="target-title">Display Name</label>
-                        <input type="text" id="target-title" placeholder="e.g., Snowboard">
-                        <div class="help-text">Give this rule a friendly name so you can identify it later</div>
-                    </div>
+                    <input type="hidden" id="target-id">
+                    <input type="hidden" id="target-title">
 
                     <div class="form-row">
                         <div class="form-group">
@@ -408,6 +505,9 @@
         const API_URL = 'https://shopify-order-limits-production.up.railway.app';
         const SHOP_ID = 'my-test-store-123456789109';
 
+        let selectedProduct = null;
+        let searchTimeout = null;
+
         // Tab switching
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -432,15 +532,96 @@
             setTimeout(() => alert.remove(), 5000);
         }
 
-        // Toggle target fields based on rule type
+        // Toggle product search based on rule type
         document.getElementById('rule-type').addEventListener('change', (e) => {
             const isCartWide = e.target.value === 'cart';
-            document.getElementById('target-group').style.display = isCartWide ? 'none' : 'block';
-            document.getElementById('target-title-group').style.display = isCartWide ? 'none' : 'block';
+            document.getElementById('product-search-group').style.display = isCartWide ? 'none' : 'block';
             
             if (isCartWide) {
-                document.getElementById('target-id').value = '';
-                document.getElementById('target-title').value = '';
+                removeSelectedProduct();
+            }
+        });
+
+        // Product search autocomplete
+        document.getElementById('product-search').addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                document.getElementById('autocomplete-results').classList.remove('active');
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => searchProducts(query), 300);
+        });
+
+        async function searchProducts(query) {
+            try {
+                const response = await fetch(`${API_URL}/api/products/search?shop=${SHOP_ID}&q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAutocompleteResults(data.products);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        function displayAutocompleteResults(products) {
+            const resultsContainer = document.getElementById('autocomplete-results');
+            
+            if (products.length === 0) {
+                resultsContainer.innerHTML = '<div style="padding: 12px; color: #6d7175;">No products found</div>';
+                resultsContainer.classList.add('active');
+                return;
+            }
+            
+            resultsContainer.innerHTML = products.map(product => `
+                <div class="autocomplete-item" onclick='selectProduct(${JSON.stringify(product)})'>
+                    <img src="${product.image || 'https://via.placeholder.com/40'}" alt="${product.title}">
+                    <div class="autocomplete-item-text">
+                        <div class="autocomplete-item-title">${product.title}</div>
+                        <div class="autocomplete-item-id">ID: ${product.id}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            resultsContainer.classList.add('active');
+        }
+
+        function selectProduct(product) {
+            selectedProduct = product;
+            
+            document.getElementById('product-search').value = product.title;
+            document.getElementById('autocomplete-results').classList.remove('active');
+            
+            document.getElementById('target-id').value = product.id;
+            document.getElementById('target-title').value = product.title;
+            
+            document.getElementById('selected-product-image').src = product.image || 'https://via.placeholder.com/50';
+            document.getElementById('selected-product-title').textContent = product.title;
+            document.getElementById('selected-product-id').textContent = product.id;
+            document.getElementById('selected-product').classList.add('active');
+            
+            document.getElementById('product-search').style.display = 'none';
+        }
+
+        function removeSelectedProduct() {
+            selectedProduct = null;
+            document.getElementById('product-search').value = '';
+            document.getElementById('product-search').style.display = 'block';
+            document.getElementById('target-id').value = '';
+            document.getElementById('target-title').value = '';
+            document.getElementById('selected-product').classList.remove('active');
+            document.getElementById('autocomplete-results').classList.remove('active');
+        }
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.autocomplete-wrapper')) {
+                document.getElementById('autocomplete-results').classList.remove('active');
             }
         });
 
@@ -520,6 +701,11 @@
             const maxQuantity = document.getElementById('max-quantity').value;
             const message = document.getElementById('custom-message').value;
 
+            if (ruleType !== 'cart' && !targetId) {
+                showAlert('Please select a product', 'error');
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_URL}/api/rules`, {
                     method: 'POST',
@@ -540,6 +726,7 @@
                 if (data.success) {
                     showAlert('Rule created successfully!');
                     e.target.reset();
+                    removeSelectedProduct();
                     loadRules();
                 } else {
                     showAlert('Failed to create rule', 'error');
