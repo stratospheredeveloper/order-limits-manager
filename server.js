@@ -353,6 +353,65 @@ app.get('/api/products/search', async (req, res) => {
   }
 });
 
+// ===== MANDATORY COMPLIANCE WEBHOOKS =====
+
+import crypto from 'crypto';
+
+// Verify Shopify webhook signature
+function verifyWebhook(req) {
+  const hmac = req.get('X-Shopify-Hmac-Sha256');
+  const body = JSON.stringify(req.body);
+  const hash = crypto
+    .createHmac('sha256', process.env.SHOPIFY_API_SECRET)
+    .update(body, 'utf8')
+    .digest('base64');
+  return hmac === hash;
+}
+
+// Webhook: Customer data request (GDPR)
+app.post('/webhooks/customers/data_request', express.json(), (req, res) => {
+  if (!verifyWebhook(req)) {
+    return res.status(401).send('Unauthorized');
+  }
+  
+  console.log('Customer data request:', req.body);
+  // We don't store customer data, so nothing to return
+  res.status(200).send('OK');
+});
+
+// Webhook: Customer redact (GDPR)
+app.post('/webhooks/customers/redact', express.json(), (req, res) => {
+  if (!verifyWebhook(req)) {
+    return res.status(401).send('Unauthorized');
+  }
+  
+  console.log('Customer redact request:', req.body);
+  // We don't store customer data, so nothing to delete
+  res.status(200).send('OK');
+});
+
+// Webhook: Shop redact (GDPR)
+app.post('/webhooks/shop/redact', express.json(), (req, res) => {
+  if (!verifyWebhook(req)) {
+    return res.status(401).send('Unauthorized');
+  }
+  
+  const shopId = req.body.shop_domain;
+  console.log('Shop redact request:', shopId);
+  
+  // Delete all data for this shop
+  prisma.rule.deleteMany({ where: { shopId } })
+    .then(() => prisma.settings.deleteMany({ where: { shopId } }))
+    .then(() => prisma.shop.deleteMany({ where: { id: shopId } }))
+    .then(() => res.status(200).send('OK'))
+    .catch(err => {
+      console.error('Error deleting shop data:', err);
+      res.status(500).send('Error');
+    });
+});
+
+// ===== END COMPLIANCE WEBHOOKS =====
+
 // Initialize database on first run
 async function initializeDatabase() {
   try {
