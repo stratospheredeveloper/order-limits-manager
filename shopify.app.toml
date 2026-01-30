@@ -2,7 +2,7 @@
 
 name = "my-order-limits"
 client_id = "f5dab3c6fac8fd86cfdf7b9689708208"
-application_url = "application_url = "https://shopify-order-limits-production.up.railway.app""
+application_url = "application_url = "https://order-limits-manager-production.up.railway.app"
 embedded = true
 
 [build]
@@ -13,7 +13,7 @@ scopes = "read_products,write_themes,read_orders"
 
 [auth]
 redirect_urls = [
-  "https://shopify-order-limits-production.up.railway.app/api/auth/callback"
+  "https://order-limits-manager-production.up.railway.app/api/auth/callback"
 ]
 
 [webhooks]
