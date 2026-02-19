@@ -2,10 +2,14 @@ import 'dotenv/config';
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Middleware
 app.use(cors({
@@ -22,33 +26,7 @@ app.get('/health', (req, res) => {
 
 // Home route
 app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Order Limits Manager</title>
-        <style>
-          body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-          h1 { color: #5C6AC4; }
-          .status { background: #E3F2FD; padding: 20px; border-radius: 8px; }
-        </style>
-      </head>
-      <body>
-        <h1>🎉 Order Limits Manager</h1>
-        <div class="status">
-          <p><strong>Status:</strong> Running</p>
-          <p><strong>Version:</strong> 1.0.0</p>
-          <p><strong>API Ready:</strong> Yes</p>
-        </div>
-        <h2>Next Steps:</h2>
-        <ol>
-          <li>Install this app on your Shopify store</li>
-          <li>Configure your order limits</li>
-          <li>Start managing quantities!</li>
-        </ol>
-      </body>
-    </html>
-  `);
+  res.sendFile(path.join(__dirname, 'admin-dashboard-with-search.html'));
 });
 
 // API: Get all rules for a shop
