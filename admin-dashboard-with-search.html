@@ -355,6 +355,12 @@
         <div id="alert-container"></div>
 
         <div class="card">
+            <div class="card-title">Theme Setup</div>
+            <div id="theme-setup-loading" class="loading">Loading theme setup...</div>
+            <div id="theme-setup"></div>
+        </div>
+
+        <div class="card">
             <div class="card-title">Create Rule</div>
             <p class="card-copy">Create the product, variant, or cart rule first. After that, turn on the cart validator and test the storefront flow.</p>
 
@@ -402,12 +408,6 @@
 
                 <button type="submit" class="button">Create Rule</button>
             </form>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Theme Setup</div>
-            <div id="theme-setup-loading" class="loading">Loading theme setup...</div>
-            <div id="theme-setup"></div>
         </div>
 
         <div class="card">
@@ -650,6 +650,13 @@
 
                     <div class="setup-step">
                         <div class="setup-step-number">3</div>
+                        <h3>Add Product Block</h3>
+                        <p>If you want to place the product warning manually, use the product block and move it under product information, below the buy buttons.</p>
+                        ${renderNavigationButton('Add Product Block', themeSetupContext.links?.block, 'button-secondary')}
+                    </div>
+
+                    <div class="setup-step">
+                        <div class="setup-step-number">4</div>
                         <h3>Save and Test</h3>
                         <p>Save the theme, then test the storefront and cart only after you have at least one rule created.</p>
                         <div class="button-group">
@@ -657,11 +664,6 @@
                             ${renderNavigationButton('Open Cart', themeSetupContext.links?.cart, 'button-secondary', 'new-tab', !hasRules)}
                         </div>
                     </div>
-                </div>
-
-                <div class="setup-note">
-                    <p>If you want to place the product warning manually, use the product block and move it under product information, below the buy buttons.</p>
-                    ${renderNavigationButton('Add Product Block', themeSetupContext.links?.block, 'button-secondary')}
                 </div>
             `;
         }
