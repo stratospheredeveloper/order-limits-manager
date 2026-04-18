@@ -17,8 +17,23 @@ const SHOP_POLICY_CACHE_TTL_MS = Number(process.env.SHOP_POLICY_CACHE_TTL_MS || 
 const SHOPIFY_CALLBACK_PATH = '/api/auth/callback';
 const THEME_EMBED_HANDLE = 'cart-validator';
 const THEME_BLOCK_HANDLE = 'product-limit-notice';
-const PUBLIC_APP_URL = (process.env.SHOPIFY_APP_URL || 'https://order-limits-manager-production.up.railway.app').replace(/\/$/, '');
+const DEFAULT_APP_URL = 'https://order-limits-manager-production.up.railway.app';
 const shopPolicyCache = new Map();
+
+function resolvePublicAppUrl(rawValue) {
+  const candidate = typeof rawValue === 'string' ? rawValue.trim() : '';
+  const match = candidate.match(/https?:\/\/[^\s]+/);
+  const normalized = (match ? match[0] : DEFAULT_APP_URL).replace(/\/$/, '');
+
+  try {
+    return new URL(normalized).toString().replace(/\/$/, '');
+  } catch (error) {
+    console.warn(`Invalid SHOPIFY_APP_URL value "${candidate}". Falling back to ${DEFAULT_APP_URL}.`);
+    return DEFAULT_APP_URL;
+  }
+}
+
+const PUBLIC_APP_URL = resolvePublicAppUrl(process.env.SHOPIFY_APP_URL);
 
 const SEARCH_PRODUCTS_QUERY = `
   query LimitProProductSearch($query: String!) {
