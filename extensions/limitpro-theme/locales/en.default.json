@@ -1,0 +1,8 @@
+{
+  "general": {
+    "app_name": "LimitPro",
+    "cart_validator": "Cart validator",
+    "product_limit_notice": "Product limit notice",
+    "order_limits": "Order limits"
+  }
+}
