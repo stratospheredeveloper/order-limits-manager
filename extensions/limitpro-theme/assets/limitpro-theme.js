@@ -1,9 +1,17 @@
 (function () {
-  const manualProductRoots = Array.from(document.querySelectorAll('[data-limitpro-product-notice]'));
-  const cartRoot = document.querySelector('[data-limitpro-cart-validator]');
-  const primaryRoot = cartRoot || manualProductRoots[0];
+  function manualProductNoticeRoots() {
+    return Array.from(document.querySelectorAll('[data-limitpro-product-notice]')).filter((root) => root.isConnected);
+  }
 
-  if (!primaryRoot) {
+  function currentCartRoot() {
+    return document.querySelector('[data-limitpro-cart-validator]');
+  }
+
+  function currentPrimaryRoot() {
+    return currentCartRoot() || manualProductNoticeRoots()[0] || null;
+  }
+
+  if (!currentPrimaryRoot()) {
     return;
   }
 
@@ -14,7 +22,6 @@
   };
   window.__limitproThemeState = state;
 
-  let autoProductRoot = null;
   let cartFooterRoot = null;
   let pendingCartValidation = null;
   let rerunCartValidation = false;
@@ -95,11 +102,11 @@
   }
 
   function shopDomain() {
-    return primaryRoot?.dataset.shop || '';
+    return currentPrimaryRoot()?.dataset.shop || '';
   }
 
   function apiBase() {
-    return primaryRoot?.dataset.apiBase || window.location.origin;
+    return currentPrimaryRoot()?.dataset.apiBase || window.location.origin;
   }
 
   function isVisibleElement(element) {
@@ -200,9 +207,11 @@
   }
 
   function currentProductId(root = null) {
+    const activeCartRoot = currentCartRoot();
+    const productRoots = manualProductNoticeRoots();
     return root?.dataset.productId
-      || cartRoot?.dataset.productId
-      || manualProductRoots[0]?.dataset.productId
+      || activeCartRoot?.dataset.productId
+      || productRoots[0]?.dataset.productId
       || window?.ShopifyAnalytics?.meta?.product?.id?.toString()
       || window?.meta?.product?.id?.toString()
       || null;
@@ -262,7 +271,9 @@
       'select[name="id"]',
     ]);
 
-    return variantInput?.value || root?.dataset.variantId || cartRoot?.dataset.variantId || manualProductRoots[0]?.dataset.variantId || null;
+    const activeCartRoot = currentCartRoot();
+    const productRoots = manualProductNoticeRoots();
+    return variantInput?.value || root?.dataset.variantId || activeCartRoot?.dataset.variantId || productRoots[0]?.dataset.variantId || null;
   }
 
   function currentProductQuantity(root = null) {
@@ -345,44 +356,8 @@
     ].join(', '));
   }
 
-  function ensureAutoProductRoot() {
-    if (manualProductRoots.length) {
-      return null;
-    }
-
-    const productId = currentProductId();
-    const mount = findProductNoticeMount();
-
-    if (!productId || !mount) {
-      return null;
-    }
-
-    if (autoProductRoot && autoProductRoot.isConnected) {
-      autoProductRoot.dataset.productId = productId;
-      autoProductRoot.dataset.variantId = currentVariantId() || '';
-      return autoProductRoot;
-    }
-
-    autoProductRoot = document.createElement('div');
-    autoProductRoot.setAttribute('data-limitpro-product-notice', '');
-    autoProductRoot.dataset.shop = shopDomain();
-    autoProductRoot.dataset.apiBase = apiBase();
-    autoProductRoot.dataset.productId = productId;
-    autoProductRoot.dataset.variantId = currentVariantId() || '';
-
-    mount.insertAdjacentElement('afterend', autoProductRoot);
-    return autoProductRoot;
-  }
-
   function productNoticeRoots() {
-    const roots = [...manualProductRoots];
-    const autoRoot = ensureAutoProductRoot();
-
-    if (autoRoot) {
-      roots.push(autoRoot);
-    }
-
-    return roots;
+    return manualProductNoticeRoots();
   }
 
   async function fetchProductRules(productId = currentProductId(), variantId = currentVariantId()) {
@@ -588,7 +563,7 @@
   }
 
   function renderCartWarnings() {
-    if (!cartRoot) {
+    if (!currentCartRoot()) {
       return;
     }
 
@@ -623,7 +598,7 @@
   }
 
   async function validateCart() {
-    if (!cartRoot) {
+    if (!currentCartRoot()) {
       return;
     }
 
@@ -667,7 +642,7 @@
   }
 
   function scheduleCartValidation() {
-    if (!cartRoot) {
+    if (!currentCartRoot()) {
       return;
     }
 
@@ -680,7 +655,7 @@
   }
 
   function patchCartRequests() {
-    if (window.__limitproCartPatched || !cartRoot) {
+    if (window.__limitproCartPatched || !currentCartRoot()) {
       return;
     }
     window.__limitproCartPatched = true;
@@ -747,7 +722,7 @@
   }
 
   function initCartListeners() {
-    if (!cartRoot) {
+    if (!currentCartRoot()) {
       return;
     }
 
