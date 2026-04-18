@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>limitpro</title>
+    <link rel="icon" type="image/jpeg" href="/limitpro-logo.jpg">
+    <link rel="shortcut icon" type="image/jpeg" href="/limitpro-logo.jpg">
     <style>
         * {
             margin: 0;
@@ -140,6 +142,182 @@
         textarea {
             min-height: 100px;
             resize: vertical;
+        }
+
+        .catalog-picker {
+            position: relative;
+        }
+
+        .catalog-trigger {
+            width: 100%;
+            border: 1px solid #c9cccf;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #fafbfb 100%);
+            color: #202223;
+            padding: 12px 14px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+
+        .catalog-trigger:hover {
+            border-color: #9fa3a8;
+        }
+
+        .catalog-trigger:focus-visible,
+        .catalog-trigger.is-open {
+            outline: none;
+            border-color: #008060;
+            box-shadow: 0 0 0 1px #008060;
+        }
+
+        .catalog-trigger[disabled] {
+            cursor: not-allowed;
+            opacity: 0.6;
+            background: #f6f6f7;
+        }
+
+        .catalog-trigger__content,
+        .catalog-option__content {
+            min-width: 0;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .catalog-trigger__copy,
+        .catalog-option__copy {
+            min-width: 0;
+        }
+
+        .catalog-trigger__title,
+        .catalog-option__title {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #202223;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .catalog-trigger__subtitle,
+        .catalog-option__subtitle,
+        .catalog-trigger__placeholder {
+            display: block;
+            font-size: 12px;
+            color: #6d7175;
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .catalog-trigger__chevron {
+            font-size: 16px;
+            color: #6d7175;
+            transition: transform 0.18s ease;
+        }
+
+        .catalog-trigger.is-open .catalog-trigger__chevron {
+            transform: rotate(180deg);
+        }
+
+        .catalog-thumb,
+        .catalog-thumb--placeholder {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        .catalog-thumb {
+            object-fit: cover;
+            border: 1px solid #e1e3e5;
+            background: #f6f6f7;
+        }
+
+        .catalog-thumb--placeholder {
+            background: linear-gradient(145deg, #d9f0e6 0%, #b7dfcf 100%);
+            color: #006e52;
+            font-size: 15px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #b8d9cb;
+        }
+
+        .catalog-price {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #eef8f3;
+            color: #006e52;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 9px;
+            white-space: nowrap;
+        }
+
+        .catalog-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            z-index: 40;
+            background: #ffffff;
+            border: 1px solid #d6d9dc;
+            border-radius: 16px;
+            box-shadow: 0 20px 45px rgba(32, 34, 35, 0.14);
+            padding: 8px;
+        }
+
+        .catalog-options {
+            max-height: 320px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .catalog-empty {
+            padding: 16px 14px;
+            font-size: 13px;
+            color: #6d7175;
+            text-align: center;
+        }
+
+        .catalog-option {
+            width: 100%;
+            border: 1px solid #e1e3e5;
+            border-radius: 14px;
+            background: #ffffff;
+            color: #202223;
+            padding: 10px 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+
+        .catalog-option:hover,
+        .catalog-option:focus-visible {
+            outline: none;
+            border-color: #008060;
+            box-shadow: 0 0 0 1px rgba(0, 128, 96, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .catalog-option.is-selected {
+            border-color: #008060;
+            background: #f1fbf6;
         }
 
         .help-text {
@@ -376,10 +554,27 @@
                 </div>
 
                 <div class="form-group" id="catalog-group">
-                    <label for="catalog-select">Choose Product</label>
-                    <select id="catalog-select">
-                        <option value="">Loading catalog...</option>
-                    </select>
+                    <label for="catalog-trigger">Choose Product</label>
+                    <div class="catalog-picker" id="catalog-picker">
+                        <button
+                            type="button"
+                            id="catalog-trigger"
+                            class="catalog-trigger"
+                            aria-haspopup="listbox"
+                            aria-expanded="false"
+                        >
+                            <span class="catalog-trigger__content">
+                                <span class="catalog-trigger__copy">
+                                    <span class="catalog-trigger__placeholder">Loading catalog...</span>
+                                </span>
+                            </span>
+                            <span class="catalog-trigger__chevron" aria-hidden="true">▾</span>
+                        </button>
+                        <div class="catalog-dropdown" id="catalog-dropdown" hidden>
+                            <div class="catalog-empty" id="catalog-empty">Loading catalog...</div>
+                            <div class="catalog-options" id="catalog-options" role="listbox" aria-label="Catalog options"></div>
+                        </div>
+                    </div>
                     <div class="help-text" id="catalog-help">Choose directly from your shop catalog.</div>
                 </div>
 
@@ -389,13 +584,13 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="min-quantity">Minimum Quantity</label>
-                        <input type="number" id="min-quantity" min="0" placeholder="for example 2">
+                        <input type="number" id="min-quantity" min="0" placeholder="For example 2">
                         <div class="help-text">Leave empty if this rule only needs a maximum.</div>
                     </div>
 
                     <div class="form-group">
                         <label for="max-quantity">Maximum Quantity</label>
-                        <input type="number" id="max-quantity" min="0" placeholder="for example 10">
+                        <input type="number" id="max-quantity" min="0" placeholder="For example 10">
                         <div class="help-text">Leave empty if this rule only needs a minimum.</div>
                     </div>
                 </div>
@@ -427,6 +622,8 @@
 
         let hasRules = false;
         let themeSetupContext = null;
+        let isCatalogLoading = false;
+        let isCatalogPickerOpen = false;
 
         function getShopFromHostParam() {
             const hostParam = queryParams.get('host');
@@ -521,10 +718,19 @@
             return document.getElementById('rule-type').value;
         }
 
+        function currentCatalogEntries() {
+            return catalogCache[getRuleType()] || [];
+        }
+
+        function selectedCatalogEntry() {
+            const targetId = document.getElementById('target-id').value;
+            return currentCatalogEntries().find((entry) => String(entry.id) === String(targetId)) || null;
+        }
+
         function clearTargetSelection() {
-            document.getElementById('catalog-select').value = '';
             document.getElementById('target-id').value = '';
             document.getElementById('target-title').value = '';
+            renderCatalogPicker();
         }
 
         function catalogLabel(ruleType) {
@@ -545,31 +751,145 @@
             return ruleType ? ruleType.charAt(0).toUpperCase() + ruleType.slice(1) : '-';
         }
 
-        function populateCatalogSelect() {
-            const ruleType = getRuleType();
-            const select = document.getElementById('catalog-select');
-            const entries = catalogCache[ruleType] || [];
-            const placeholder = ruleType === 'variant' ? 'Choose a variant' : 'Choose a product';
+        function catalogInitials(entry) {
+            const source = entry?.title || entry?.subtitle || '?';
+            return source
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((word) => word.charAt(0).toUpperCase())
+                .join('') || '?';
+        }
 
-            select.innerHTML = `
-                <option value="">${escapeHtml(entries.length ? placeholder : 'No catalog items found')}</option>
-                ${entries.map((entry) => `
-                    <option value="${escapeHtml(entry.id)}" data-title="${escapeHtml(entry.title)}">
-                        ${escapeHtml(entry.title)}
-                    </option>
-                `).join('')}
+        function renderCatalogThumb(entry) {
+            if (entry?.image) {
+                return `<img class="catalog-thumb" src="${escapeHtml(entry.image)}" alt="${escapeHtml(entry.title || 'Catalog item')}">`;
+            }
+
+            return `<span class="catalog-thumb--placeholder" aria-hidden="true">${escapeHtml(catalogInitials(entry))}</span>`;
+        }
+
+        function renderCatalogTriggerContent(entry) {
+            if (!entry) {
+                const placeholder = isCatalogLoading
+                    ? 'Loading catalog...'
+                    : currentCatalogEntries().length
+                        ? catalogLabel(getRuleType())
+                        : 'No catalog items found';
+
+                return `
+                    <span class="catalog-trigger__content">
+                        <span class="catalog-trigger__copy">
+                            <span class="catalog-trigger__placeholder">${escapeHtml(placeholder)}</span>
+                        </span>
+                    </span>
+                `;
+            }
+
+            return `
+                <span class="catalog-trigger__content">
+                    ${renderCatalogThumb(entry)}
+                    <span class="catalog-trigger__copy">
+                        <span class="catalog-trigger__title">${escapeHtml(entry.title)}</span>
+                        ${entry.subtitle ? `<span class="catalog-trigger__subtitle">${escapeHtml(entry.subtitle)}</span>` : ''}
+                    </span>
+                    ${entry.price ? `<span class="catalog-price">${escapeHtml(entry.price)}</span>` : ''}
+                </span>
             `;
+        }
+
+        function renderCatalogOption(entry) {
+            const isSelected = String(entry.id) === String(document.getElementById('target-id').value);
+
+            return `
+                <button
+                    type="button"
+                    class="catalog-option${isSelected ? ' is-selected' : ''}"
+                    data-catalog-id="${escapeHtml(entry.id)}"
+                    role="option"
+                    aria-selected="${isSelected ? 'true' : 'false'}"
+                >
+                    <span class="catalog-option__content">
+                        ${renderCatalogThumb(entry)}
+                        <span class="catalog-option__copy">
+                            <span class="catalog-option__title">${escapeHtml(entry.title)}</span>
+                            ${entry.subtitle ? `<span class="catalog-option__subtitle">${escapeHtml(entry.subtitle)}</span>` : ''}
+                        </span>
+                        ${entry.price ? `<span class="catalog-price">${escapeHtml(entry.price)}</span>` : ''}
+                    </span>
+                </button>
+            `;
+        }
+
+        function setCatalogPickerOpen(isOpen) {
+            const shouldOpen = Boolean(isOpen && !isCatalogLoading && currentCatalogEntries().length > 0);
+            const trigger = document.getElementById('catalog-trigger');
+            const dropdown = document.getElementById('catalog-dropdown');
+
+            isCatalogPickerOpen = shouldOpen;
+            dropdown.hidden = !shouldOpen;
+            trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            trigger.classList.toggle('is-open', shouldOpen);
+        }
+
+        function renderCatalogPicker() {
+            const trigger = document.getElementById('catalog-trigger');
+            const dropdown = document.getElementById('catalog-dropdown');
+            const emptyState = document.getElementById('catalog-empty');
+            const options = document.getElementById('catalog-options');
+            const entries = currentCatalogEntries();
+            const selectedEntry = selectedCatalogEntry();
+
+            trigger.innerHTML = `
+                ${renderCatalogTriggerContent(selectedEntry)}
+                <span class="catalog-trigger__chevron" aria-hidden="true">▾</span>
+            `;
+
+            trigger.disabled = isCatalogLoading || !entries.length;
+
+            if (isCatalogLoading) {
+                emptyState.hidden = false;
+                emptyState.textContent = 'Loading catalog...';
+                options.innerHTML = '';
+                setCatalogPickerOpen(false);
+                return;
+            }
+
+            if (!entries.length) {
+                emptyState.hidden = false;
+                emptyState.textContent = 'No catalog items found';
+                options.innerHTML = '';
+                setCatalogPickerOpen(false);
+                return;
+            }
+
+            emptyState.hidden = true;
+            options.innerHTML = entries.map((entry) => renderCatalogOption(entry)).join('');
+            dropdown.hidden = !isCatalogPickerOpen;
+            trigger.setAttribute('aria-expanded', isCatalogPickerOpen ? 'true' : 'false');
+            trigger.classList.toggle('is-open', isCatalogPickerOpen);
+        }
+
+        function selectCatalogEntry(entryId) {
+            const entry = currentCatalogEntries().find((catalogEntry) => String(catalogEntry.id) === String(entryId));
+            if (!entry) {
+                return;
+            }
+
+            document.getElementById('target-id').value = entry.id;
+            document.getElementById('target-title').value = entry.targetTitle || entry.title;
+            setCatalogPickerOpen(false);
+            renderCatalogPicker();
         }
 
         async function loadCatalog(ruleType = getRuleType(), force = false) {
             if (!force && Array.isArray(catalogCache[ruleType])) {
-                populateCatalogSelect();
+                renderCatalogPicker();
                 return;
             }
 
-            const select = document.getElementById('catalog-select');
-            select.innerHTML = '<option value="">Loading catalog...</option>';
-            select.disabled = true;
+            isCatalogLoading = true;
+            renderCatalogPicker();
 
             try {
                 const { response, data } = await fetchJson(
@@ -592,27 +912,29 @@
                 catalogCache[ruleType] = [];
                 showAlert('Failed to load the product catalog.', 'error');
             } finally {
-                select.disabled = false;
-                populateCatalogSelect();
+                isCatalogLoading = false;
+                renderCatalogPicker();
             }
         }
 
         function updateCatalogFieldMeta() {
             const ruleType = getRuleType();
             const catalogGroup = document.getElementById('catalog-group');
-            const label = document.querySelector('label[for="catalog-select"]');
+            const label = document.querySelector('label[for="catalog-trigger"]');
             const helpText = document.getElementById('catalog-help');
             const isCartWide = ruleType === 'cart';
 
             catalogGroup.style.display = isCartWide ? 'none' : 'block';
 
             if (isCartWide) {
+                setCatalogPickerOpen(false);
                 clearTargetSelection();
                 return;
             }
 
             label.textContent = catalogLabel(ruleType);
             helpText.textContent = catalogHelp(ruleType);
+            setCatalogPickerOpen(false);
             clearTargetSelection();
             loadCatalog(ruleType);
         }
@@ -814,13 +1136,27 @@
             updateCatalogFieldMeta();
         });
 
-        document.getElementById('catalog-select').addEventListener('change', (event) => {
-            const selectedOption = event.target.selectedOptions[0];
-            document.getElementById('target-id').value = selectedOption?.value || '';
-            document.getElementById('target-title').value = selectedOption?.dataset.title || '';
+        document.getElementById('catalog-trigger').addEventListener('click', () => {
+            if (document.getElementById('catalog-trigger').disabled) {
+                return;
+            }
+
+            setCatalogPickerOpen(!isCatalogPickerOpen);
+            renderCatalogPicker();
         });
 
         document.addEventListener('click', (event) => {
+            const catalogOption = event.target.closest('[data-catalog-id]');
+            if (catalogOption) {
+                selectCatalogEntry(catalogOption.dataset.catalogId);
+                return;
+            }
+
+            if (!event.target.closest('#catalog-picker')) {
+                setCatalogPickerOpen(false);
+                renderCatalogPicker();
+            }
+
             const navigationButton = event.target.closest('[data-open-url]');
             if (!navigationButton || navigationButton.disabled) {
                 return;
@@ -835,6 +1171,13 @@
 
             openNavigation(navigationButton.dataset.openUrl, navigationButton.dataset.openMode || 'new-tab');
         }, true);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                setCatalogPickerOpen(false);
+                renderCatalogPicker();
+            }
+        });
 
         document.getElementById('create-rule-form').addEventListener('submit', async (event) => {
             event.preventDefault();

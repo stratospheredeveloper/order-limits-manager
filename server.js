@@ -72,11 +72,21 @@ const PRODUCT_CATALOG_QUERY = `
         featuredImage {
           url
         }
+        priceRangeV2 {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
         variants(first: 100) {
           nodes {
             id
             title
             displayName
+            price
+            image {
+              url
+            }
           }
         }
       }
@@ -334,18 +344,41 @@ function aggregateProductRuleSummary(rules) {
   };
 }
 
+function formatCatalogPrice(amount, currencyCode) {
+  const numericAmount = Number(amount);
+
+  if (!Number.isFinite(numericAmount) || !currencyCode) {
+    return null;
+  }
+
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      maximumFractionDigits: 2,
+    }).format(numericAmount);
+  } catch (error) {
+    return `${currencyCode} ${numericAmount.toFixed(2)}`;
+  }
+}
+
 function buildCatalogEntries(products, ruleType) {
   if (ruleType === 'variant') {
     return products.flatMap((product) => (
       (product.variants?.nodes || []).map((variant) => {
         const variantTitle = variant.displayName || variant.title || 'Default variant';
-        const title = variantTitle === 'Default Title'
-          ? product.title
-          : `${product.title} - ${variantTitle}`;
+        const normalizedVariantTitle = variantTitle === 'Default Title' ? 'Default variant' : variantTitle;
+        const currencyCode = product.priceRangeV2?.minVariantPrice?.currencyCode || null;
 
         return {
           id: extractNumericId(variant.id),
-          title,
+          title: product.title,
+          targetTitle: normalizedVariantTitle === 'Default variant'
+            ? product.title
+            : `${product.title} - ${normalizedVariantTitle}`,
+          subtitle: normalizedVariantTitle,
+          image: variant.image?.url || product.featuredImage?.url || null,
+          price: formatCatalogPrice(variant.price, currencyCode),
         };
       })
     ));
@@ -354,6 +387,12 @@ function buildCatalogEntries(products, ruleType) {
   return products.map((product) => ({
     id: extractNumericId(product.id),
     title: product.title,
+    targetTitle: product.title,
+    image: product.featuredImage?.url || null,
+    price: formatCatalogPrice(
+      product.priceRangeV2?.minVariantPrice?.amount,
+      product.priceRangeV2?.minVariantPrice?.currencyCode
+    ),
   }));
 }
 
