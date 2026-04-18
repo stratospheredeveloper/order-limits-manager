@@ -808,31 +808,34 @@
                     <div class="setup-grid">
                         <div class="setup-step">
                             <div class="setup-step-number">1</div>
-                            <h3>Enable the app embed</h3>
-                            <p>Required for every store. This turns on the cart validator that shows your custom messages and blocks checkout when a rule fails, without touching theme code.</p>
-                            ${renderNavigationButton('Activate App Embed', data.links?.embed)}
+                            <h3>Required: turn on Cart validator</h3>
+                            <p>This is the only step most merchants need. Once enabled, LimitPro validates cart rules, blocks checkout when needed, and can show product guidance automatically without theme edits.</p>
+                            ${renderNavigationButton('Enable Cart Validator', data.links?.embed)}
                         </div>
 
                         <div class="setup-step">
                             <div class="setup-step-number">2</div>
-                            <h3>Add the product app block</h3>
-                            <p>Optional for Online Store 2.0 themes. Add the product notice block to your default product template if you want customers to see product-level limits before adding items to cart.</p>
-                            ${renderNavigationButton('Preview App Block', data.links?.block, 'button-secondary')}
+                            <h3>Optional: place the product block manually</h3>
+                            <p>Only use this if you want the product notice in a specific spot in an Online Store 2.0 theme. Otherwise, the app embed can handle product guidance automatically.</p>
+                            ${renderNavigationButton('Add Product Block', data.links?.block, 'button-secondary')}
                         </div>
 
                         <div class="setup-step">
                             <div class="setup-step-number">3</div>
                             <h3>Save and test</h3>
-                            <p>Save the theme changes, preview the storefront, add products with active rules, and confirm the warning text and checkout behavior match the rules saved in LimitPro.</p>
-                            ${renderNavigationButton('Open Theme Again', data.links?.themeEditor, 'button-secondary')}
+                            <p>After saving, open the storefront, add products with active rules, and confirm the warning text and checkout behavior match what you saved in LimitPro.</p>
+                            <div class="button-group">
+                                ${renderNavigationButton('Open Storefront', data.links?.storefront, 'button-secondary')}
+                                ${renderNavigationButton('Open Cart', data.links?.cart, 'button-secondary')}
+                            </div>
                         </div>
                     </div>
 
                     <div class="setup-instructions">
                         <ol>
-                            <li>In Theme settings &gt; App embeds, turn on <strong>Cart validator</strong>, then click <strong>Save</strong>. This embed works on all Shopify themes.</li>
-                            <li>From the Apps section of the product template, add <strong>Product limit notice</strong> if you want to show product-level guidance before checkout. Merchants can move or remove this block at any time in the theme editor.</li>
-                            <li>After saving, preview the storefront and test both states: a valid cart and a blocked cart. Your custom rule messages are controlled in LimitPro, not in the theme editor.</li>
+                            <li>In Theme settings &gt; App embeds, turn on <strong>Cart validator</strong>, then click <strong>Save</strong>. This is the required step for every store.</li>
+                            <li>Product-level guidance can now appear automatically when the embed is on. Add the <strong>Product limit notice</strong> block only if you want to control its exact placement in the theme editor.</li>
+                            <li>After saving, test both states: a valid cart and a blocked cart. Your custom rule messages are controlled in LimitPro, not in the theme editor.</li>
                         </ol>
                     </div>
                 `;

@@ -3,6 +3,11 @@
   data-limitpro-cart-validator
   data-shop="{{ shop.permanent_domain | escape }}"
   data-api-base="{{ limitpro_app_url | escape }}"
+  data-page-type="{{ request.page_type | escape }}"
+  {% if product %}
+    data-product-id="{{ product.id }}"
+    data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+  {% endif %}
 ></div>
 
 {% schema %}

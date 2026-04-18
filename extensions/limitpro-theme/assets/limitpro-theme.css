@@ -1,4 +1,5 @@
 [data-limitpro-cart-validator][hidden],
+[data-limitpro-inline-cart-validator][hidden],
 [data-limitpro-product-notice][hidden] {
   display: none !important;
 }
@@ -9,6 +10,11 @@
   bottom: 24px;
   z-index: 2147483000;
   width: min(420px, calc(100vw - 32px));
+}
+
+[data-limitpro-inline-cart-validator] {
+  display: block;
+  margin: 0 0 16px;
 }
 
 .limitpro-banner {

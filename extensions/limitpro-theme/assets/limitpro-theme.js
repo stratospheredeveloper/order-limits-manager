@@ -1,6 +1,8 @@
 (function () {
   const productRoots = Array.from(document.querySelectorAll('[data-limitpro-product-notice]'));
   const cartRoot = document.querySelector('[data-limitpro-cart-validator]');
+  let inlineCartRoot = null;
+  let autoProductRoot = null;
 
   if (!productRoots.length && !cartRoot) {
     return;
@@ -56,8 +58,53 @@
 
   function checkoutTargets() {
     return Array.from(document.querySelectorAll(
-      'button[name="checkout"], input[name="checkout"], a[href*="/checkout"], button[data-testid*="checkout"]'
+      [
+        'button[name="checkout"]',
+        'input[name="checkout"]',
+        'a[href*="/checkout"]',
+        'button[data-testid*="checkout"]',
+        'button[class*="checkout"]',
+        '.shopify-payment-button__button',
+      ].join(', ')
     ));
+  }
+
+  function findInlineCartBannerMount() {
+    const checkoutTarget = checkoutTargets()[0];
+    if (!checkoutTarget) {
+      return null;
+    }
+
+    return checkoutTarget.closest(
+      [
+        '.cart__footer',
+        '.cart-drawer__footer',
+        '.drawer__footer',
+        '.ajaxcart__footer',
+        '.mini-cart__footer',
+        'form[action*="/cart"]',
+      ].join(', ')
+    ) || checkoutTarget.parentElement;
+  }
+
+  function ensureInlineCartBannerRoot() {
+    const mount = findInlineCartBannerMount();
+
+    if (!mount) {
+      if (inlineCartRoot && !inlineCartRoot.isConnected) {
+        inlineCartRoot = null;
+      }
+      return null;
+    }
+
+    if (inlineCartRoot && inlineCartRoot.isConnected) {
+      return inlineCartRoot;
+    }
+
+    inlineCartRoot = document.createElement('div');
+    inlineCartRoot.setAttribute('data-limitpro-inline-cart-validator', '');
+    mount.prepend(inlineCartRoot);
+    return inlineCartRoot;
   }
 
   function applyCheckoutState() {
@@ -79,14 +126,9 @@
       return;
     }
 
-    if (!state.violations.length || !state.showCartWarning) {
-      cartRoot.hidden = true;
-      cartRoot.innerHTML = '';
-      return;
-    }
-
-    cartRoot.hidden = false;
-    cartRoot.innerHTML = `
+    const inlineHost = ensureInlineCartBannerRoot();
+    const hosts = inlineHost ? [inlineHost] : [cartRoot];
+    const bannerMarkup = `
       <div class="limitpro-banner" role="status" aria-live="polite">
         <p class="limitpro-banner__title">Order limits need attention</p>
         <p class="limitpro-banner__summary">Update the cart before checkout can continue.</p>
@@ -95,9 +137,32 @@
         </ul>
       </div>
     `;
+
+    if (!state.violations.length || !state.showCartWarning) {
+      hosts.forEach((host) => {
+        host.hidden = true;
+        host.innerHTML = '';
+      });
+      if (inlineHost && cartRoot) {
+        cartRoot.hidden = true;
+        cartRoot.innerHTML = '';
+      }
+      return;
+    }
+
+    hosts.forEach((host) => {
+      host.hidden = false;
+      host.innerHTML = bannerMarkup;
+    });
+
+    if (inlineHost && cartRoot) {
+      cartRoot.hidden = true;
+      cartRoot.innerHTML = '';
+    }
   }
 
   let pendingCartValidation = null;
+  let rerunCartValidation = false;
 
   async function validateCart() {
     if (!cartRoot) {
@@ -137,15 +202,129 @@
       renderCartBanner();
     } catch (error) {
       console.error('LimitPro cart validation failed:', error);
+    } finally {
+      if (rerunCartValidation) {
+        rerunCartValidation = false;
+        scheduleCartValidation();
+      }
     }
   }
 
   function scheduleCartValidation() {
-    if (!cartRoot || pendingCartValidation) {
+    if (!cartRoot) {
+      return;
+    }
+
+    if (pendingCartValidation) {
+      rerunCartValidation = true;
       return;
     }
 
     pendingCartValidation = window.setTimeout(validateCart, 180);
+  }
+
+  function currentVariantId() {
+    const variantInput = document.querySelector(
+      [
+        'form[action*="/cart/add"] [name="id"]',
+        'product-form [name="id"]',
+        'input[name="id"][form]',
+        'select[name="id"]',
+      ].join(', ')
+    );
+
+    return variantInput?.value || cartRoot?.dataset.variantId || null;
+  }
+
+  function currentProductId() {
+    return cartRoot?.dataset.productId
+      || window?.ShopifyAnalytics?.meta?.product?.id?.toString()
+      || window?.meta?.product?.id?.toString()
+      || null;
+  }
+
+  function findProductNoticeMount() {
+    return document.querySelector(
+      [
+        '.product__info-container',
+        '.product__info-wrapper',
+        '.product__column-sticky',
+        '.product-form',
+        'product-form',
+        'form[action*="/cart/add"]',
+      ].join(', ')
+    );
+  }
+
+  function hasManualProductNoticeRoot() {
+    return productRoots.some((root) => root.dataset.autoInjected !== 'true');
+  }
+
+  function ensureAutoProductNoticeRoot() {
+    if (!cartRoot || hasManualProductNoticeRoot()) {
+      return {
+        root: null,
+        created: false,
+      };
+    }
+
+    const productId = currentProductId();
+    const mount = findProductNoticeMount();
+
+    if (!productId || !mount) {
+      return {
+        root: null,
+        created: false,
+      };
+    }
+
+    if (autoProductRoot && autoProductRoot.isConnected) {
+      autoProductRoot.dataset.productId = productId;
+      autoProductRoot.dataset.variantId = currentVariantId() || '';
+      return {
+        root: autoProductRoot,
+        created: false,
+      };
+    }
+
+    autoProductRoot = document.createElement('div');
+    autoProductRoot.setAttribute('data-limitpro-product-notice', '');
+    autoProductRoot.dataset.shop = cartRoot.dataset.shop;
+    autoProductRoot.dataset.productId = productId;
+    autoProductRoot.dataset.variantId = currentVariantId() || '';
+    autoProductRoot.dataset.apiBase = cartRoot.dataset.apiBase;
+    autoProductRoot.dataset.heading = 'Order limits';
+    autoProductRoot.dataset.showEmpty = 'false';
+    autoProductRoot.dataset.autoInjected = 'true';
+
+    if (mount.matches('form[action*="/cart/add"], product-form, .product-form')) {
+      mount.insertAdjacentElement('afterend', autoProductRoot);
+    } else {
+      mount.appendChild(autoProductRoot);
+    }
+
+    productRoots.push(autoProductRoot);
+    return {
+      root: autoProductRoot,
+      created: true,
+    };
+  }
+
+  async function renderProductNotice(root) {
+    if (!root) {
+      return;
+    }
+
+    root.dataset.variantId = currentVariantId() || root.dataset.variantId || '';
+    await initProductNotice(root);
+  }
+
+  async function syncProductNotice(force = false) {
+    const { root, created } = ensureAutoProductNoticeRoot();
+
+    if (root && (force || created)) {
+      await renderProductNotice(root);
+    }
   }
 
   function patchCartRequests() {
@@ -191,12 +370,29 @@
     }
 
     patchCartRequests();
+    ensureInlineCartBannerRoot();
     validateCart();
     window.addEventListener('pageshow', scheduleCartValidation);
     window.addEventListener('focus', scheduleCartValidation);
+    window.addEventListener('load', () => {
+      ensureInlineCartBannerRoot();
+      syncProductNotice(true);
+    });
 
+    let pendingUiSync = false;
     const observer = new MutationObserver(() => {
-      applyCheckoutState();
+      if (pendingUiSync) {
+        return;
+      }
+
+      pendingUiSync = true;
+      window.requestAnimationFrame(() => {
+        pendingUiSync = false;
+        ensureInlineCartBannerRoot();
+        applyCheckoutState();
+        renderCartBanner();
+        syncProductNotice();
+      });
     });
     observer.observe(document.documentElement, {
       childList: true,
@@ -217,18 +413,46 @@
       event.stopPropagation();
       renderCartBanner();
 
-      if (!cartRoot.hidden) {
-        cartRoot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const activeBannerRoot = inlineCartRoot && !inlineCartRoot.hidden
+        ? inlineCartRoot
+        : cartRoot;
+
+      if (activeBannerRoot && !activeBannerRoot.hidden) {
+        activeBannerRoot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, true);
+
+    document.addEventListener('change', (event) => {
+      if (event.target.closest('form[action*="/cart"]')) {
+        scheduleCartValidation();
+      }
+
+      if (event.target.matches('form[action*="/cart/add"] [name="id"], product-form [name="id"], select[name="id"]')) {
+        syncProductNotice(true);
+      }
+    }, true);
+
+    document.addEventListener('submit', (event) => {
+      if (event.target.matches('form[action*="/cart"]')) {
+        scheduleCartValidation();
       }
     }, true);
   }
 
   async function initProductNotice(root) {
     const showEmpty = root.dataset.showEmpty === 'true';
+    const params = new URLSearchParams({
+      shop: root.dataset.shop,
+      productId: root.dataset.productId,
+    });
+
+    if (root.dataset.variantId) {
+      params.set('variantId', root.dataset.variantId);
+    }
 
     try {
       const result = await fetchJson(
-        buildApiUrl(root.dataset.apiBase, `api/storefront/product-rules?shop=${encodeURIComponent(root.dataset.shop)}&productId=${encodeURIComponent(root.dataset.productId)}`)
+        buildApiUrl(root.dataset.apiBase, `api/storefront/product-rules?${params.toString()}`)
       );
 
       if (!result.hasRules && !showEmpty) {
@@ -275,5 +499,8 @@
   }
 
   initCartValidator();
-  productRoots.forEach(initProductNotice);
+  syncProductNotice(true);
+  productRoots
+    .filter((root) => root.dataset.autoInjected !== 'true')
+    .forEach(renderProductNotice);
 })();

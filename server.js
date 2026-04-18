@@ -84,14 +84,18 @@ function buildRuleBuckets(rules) {
 
   for (const rule of rules) {
     if (rule.ruleType === 'product' && rule.targetId) {
-      if (!productRules.has(rule.targetId)) productRules.set(rule.targetId, []);
-      productRules.get(rule.targetId).push(rule);
+      for (const key of normalizeRuleTargetIds(rule.targetId)) {
+        if (!productRules.has(key)) productRules.set(key, []);
+        productRules.get(key).push(rule);
+      }
       continue;
     }
 
     if (rule.ruleType === 'variant' && rule.targetId) {
-      if (!variantRules.has(rule.targetId)) variantRules.set(rule.targetId, []);
-      variantRules.get(rule.targetId).push(rule);
+      for (const key of normalizeRuleTargetIds(rule.targetId)) {
+        if (!variantRules.has(key)) variantRules.set(key, []);
+        variantRules.get(key).push(rule);
+      }
       continue;
     }
 
@@ -168,6 +172,20 @@ function extractNumericId(gid) {
   return gid.split('/').pop() || null;
 }
 
+function normalizeRuleTargetIds(value) {
+  const rawValue = value?.toString().trim();
+  if (!rawValue) return [];
+
+  const ids = new Set([rawValue]);
+  const numericId = extractNumericId(rawValue);
+
+  if (numericId) {
+    ids.add(numericId);
+  }
+
+  return Array.from(ids);
+}
+
 function setResponseHeaders(res, headers = {}) {
   Object.entries(headers).forEach(([header, value]) => {
     if (value !== undefined) {
@@ -227,6 +245,8 @@ function buildThemeSetupLinks(shop, themeNumericId = 'current') {
     embed: `${embedBase}?context=apps&template=product&activateAppId=${encodeURIComponent(`${apiKey}/${THEME_EMBED_HANDLE}`)}`,
     block: `${embedBase}?template=product&addAppBlockId=${encodeURIComponent(`${apiKey}/${THEME_BLOCK_HANDLE}`)}&target=newAppsSection`,
     themeEditor: `${embedBase}`,
+    storefront: `https://${shop}`,
+    cart: `https://${shop}/cart`,
   };
 }
 
@@ -654,7 +674,8 @@ app.put('/api/settings', async (req, res) => {
 // API: Validate cart (called from storefront)
 app.post('/api/validate-cart', async (req, res) => {
   try {
-    const { shop, items } = req.body;
+    const shop = sanitizeShop(req.body.shop, false);
+    const items = Array.isArray(req.body.items) ? req.body.items : null;
 
     if (!shop || !items) {
       return res.status(400).json({
@@ -680,13 +701,26 @@ app.post('/api/validate-cart', async (req, res) => {
 
     for (const item of normalizedItems) {
       const matchingRules = [];
+      const seenRuleIds = new Set();
 
-      if (item.product_id && productRules.has(item.product_id)) {
-        matchingRules.push(...productRules.get(item.product_id));
+      for (const productKey of normalizeRuleTargetIds(item.product_id)) {
+        if (!productRules.has(productKey)) continue;
+
+        for (const rule of productRules.get(productKey)) {
+          if (seenRuleIds.has(rule.id)) continue;
+          seenRuleIds.add(rule.id);
+          matchingRules.push(rule);
+        }
       }
 
-      if (item.variant_id && variantRules.has(item.variant_id)) {
-        matchingRules.push(...variantRules.get(item.variant_id));
+      for (const variantKey of normalizeRuleTargetIds(item.variant_id)) {
+        if (!variantRules.has(variantKey)) continue;
+
+        for (const rule of variantRules.get(variantKey)) {
+          if (seenRuleIds.has(rule.id)) continue;
+          seenRuleIds.add(rule.id);
+          matchingRules.push(rule);
+        }
       }
 
       for (const rule of matchingRules) {
@@ -768,8 +802,9 @@ app.post('/api/validate-cart', async (req, res) => {
 // API: Product rule summary for the theme app block
 app.get('/api/storefront/product-rules', async (req, res) => {
   try {
-    const shop = req.query.shop;
+    const shop = sanitizeShop(req.query.shop, false);
     const productId = req.query.productId?.toString();
+    const variantId = req.query.variantId?.toString();
 
     if (!shop || !productId) {
       return res.status(400).json({
@@ -778,12 +813,30 @@ app.get('/api/storefront/product-rules', async (req, res) => {
       });
     }
 
+    const ruleTargets = [
+      {
+        ruleType: 'product',
+        targetId: {
+          in: normalizeRuleTargetIds(productId),
+        },
+      },
+    ];
+
+    const normalizedVariantIds = normalizeRuleTargetIds(variantId);
+    if (normalizedVariantIds.length > 0) {
+      ruleTargets.push({
+        ruleType: 'variant',
+        targetId: {
+          in: normalizedVariantIds,
+        },
+      });
+    }
+
     const rules = await prisma.rule.findMany({
       where: {
         shopId: shop.toString(),
         enabled: true,
-        ruleType: 'product',
-        targetId: productId,
+        OR: ruleTargets,
       },
       select: {
         minQuantity: true,

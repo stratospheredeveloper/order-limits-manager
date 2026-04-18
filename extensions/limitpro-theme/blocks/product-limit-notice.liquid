@@ -4,6 +4,7 @@
     data-limitpro-product-notice
     data-shop="{{ shop.permanent_domain | escape }}"
     data-product-id="{{ product.id }}"
+    data-variant-id="{{ product.selected_or_first_available_variant.id }}"
     data-api-base="{{ limitpro_app_url | escape }}"
     data-heading="{{ block.settings.heading | escape }}"
     data-show-empty="{{ block.settings.show_when_empty }}"
