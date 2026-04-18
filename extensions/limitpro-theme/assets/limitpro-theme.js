@@ -52,6 +52,7 @@
   async function fetchCart() {
     const response = await fetch(`${currentShopifyRoot()}cart.js`, {
       credentials: 'same-origin',
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -67,6 +68,15 @@
 
   function apiBase() {
     return primaryRoot?.dataset.apiBase || window.location.origin;
+  }
+
+  function isVisibleElement(element) {
+    return Boolean(element && (element.offsetWidth || element.offsetHeight || element.getClientRects().length));
+  }
+
+  function firstActiveElement(selectors) {
+    const candidates = Array.from(document.querySelectorAll(selectors.join(', ')));
+    return candidates.find(isVisibleElement) || candidates[0] || null;
   }
 
   function warningMarkup(messages) {
@@ -125,22 +135,22 @@
   }
 
   function currentVariantId() {
-    const variantInput = document.querySelector([
+    const variantInput = firstActiveElement([
       'form[action*="/cart/add"] [name="id"]',
       'product-form [name="id"]',
       'input[name="id"][form]',
       'select[name="id"]',
-    ].join(', '));
+    ]);
 
     return variantInput?.value || cartRoot?.dataset.variantId || manualProductRoots[0]?.dataset.variantId || null;
   }
 
   function currentProductQuantity() {
-    const quantityInput = document.querySelector([
+    const quantityInput = firstActiveElement([
       'form[action*="/cart/add"] input[name="quantity"]',
       'product-form input[name="quantity"]',
       'input[name="quantity"][form]',
-    ].join(', '));
+    ]);
 
     return Math.max(1, Number(quantityInput?.value) || 1);
   }
@@ -314,15 +324,30 @@
   }
 
   function cartWarningAnchor(input) {
-    return input.closest([
+    let anchor = input.closest([
       '.quantity',
       '.quantity-popover-container',
+      '.cart-item__quantity-wrapper',
       '.cart-item__quantity',
       '.cart-drawer__quantity-selector',
       '.cart-item',
       'li',
       'tr',
     ].join(', ')) || input.parentElement || input;
+
+    while (anchor.parentElement) {
+      const parent = anchor.parentElement;
+      const parentStyle = window.getComputedStyle(parent);
+      const isHorizontalFlex = parentStyle.display === 'flex' && !parentStyle.flexDirection.startsWith('column');
+
+      if (!isHorizontalFlex) {
+        break;
+      }
+
+      anchor = parent;
+    }
+
+    return anchor;
   }
 
   function ensureHostAfter(anchor, attributeName) {
@@ -545,6 +570,12 @@
 
     document.addEventListener('change', (event) => {
       if (event.target.closest('form[action*="/cart"]')) {
+        scheduleCartValidation();
+      }
+    }, true);
+
+    document.addEventListener('input', (event) => {
+      if (event.target.matches('input[name="updates[]"], cart-items .quantity__input, cart-drawer-items .quantity__input, .cart-drawer .quantity__input')) {
         scheduleCartValidation();
       }
     }, true);

@@ -24,6 +24,30 @@
             box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
         }
 
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-mark {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            background: linear-gradient(145deg, #ffe38b 0%, #f4c24d 100%);
+            border: 1px solid #e0b03f;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        }
+
+        .brand-mark svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+
         .header h1 {
             font-size: 22px;
             font-weight: 600;
@@ -318,31 +342,40 @@
 </head>
 <body>
     <div class="header">
-        <h1>limitpro</h1>
+        <div class="brand">
+            <div class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 6.5C5 5.672 5.672 5 6.5 5h4.75c3.176 0 5.75 2.574 5.75 5.75S14.426 16.5 11.25 16.5H9.5V19a1 1 0 1 1-2 0V6.5Z" fill="#1A1C1D"/>
+                    <path d="M9.5 14.5h1.75A3.75 3.75 0 0 0 15 10.75 3.75 3.75 0 0 0 11.25 7H9.5v7.5Z" fill="#FFF7D6"/>
+                    <path d="M16.5 16.5a1 1 0 0 1 1 1V19a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1Z" fill="#1A1C1D"/>
+                </svg>
+            </div>
+            <h1>limitpro</h1>
+        </div>
     </div>
 
     <div class="container">
         <div id="alert-container"></div>
 
         <div class="card">
-            <div class="card-title">create rule</div>
+            <div class="card-title">Create Rule</div>
             <p class="card-copy">Create the product, variant, or cart rule first. After that, turn on the cart validator and test the storefront flow.</p>
 
             <form id="create-rule-form">
                 <div class="form-group">
-                    <label for="rule-type">rule type</label>
+                    <label for="rule-type">Rule Type</label>
                     <select id="rule-type" required>
-                        <option value="product">product</option>
-                        <option value="variant">variant</option>
-                        <option value="cart">cart-wide</option>
+                        <option value="product">Product</option>
+                        <option value="variant">Variant</option>
+                        <option value="cart">Cart-wide</option>
                     </select>
                     <div class="help-text">Choose what this limit should apply to.</div>
                 </div>
 
                 <div class="form-group" id="catalog-group">
-                    <label for="catalog-select">choose product</label>
+                    <label for="catalog-select">Choose Product</label>
                     <select id="catalog-select">
-                        <option value="">loading catalog...</option>
+                        <option value="">Loading catalog...</option>
                     </select>
                     <div class="help-text" id="catalog-help">Choose directly from your shop catalog.</div>
                 </div>
@@ -352,37 +385,37 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="min-quantity">minimum quantity</label>
+                        <label for="min-quantity">Minimum Quantity</label>
                         <input type="number" id="min-quantity" min="0" placeholder="for example 2">
                         <div class="help-text">Leave empty if this rule only needs a maximum.</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="max-quantity">maximum quantity</label>
+                        <label for="max-quantity">Maximum Quantity</label>
                         <input type="number" id="max-quantity" min="0" placeholder="for example 10">
                         <div class="help-text">Leave empty if this rule only needs a minimum.</div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="custom-message">rule description</label>
+                    <label for="custom-message">Rule Description</label>
                     <textarea id="custom-message" placeholder="This exact message will show on the storefront when the rule is violated."></textarea>
                     <div class="help-text">Keep this short. limitpro will show this text in the yellow warning box.</div>
                 </div>
 
-                <button type="submit" class="button">create rule</button>
+                <button type="submit" class="button">Create Rule</button>
             </form>
         </div>
 
         <div class="card">
-            <div class="card-title">theme setup</div>
-            <div id="theme-setup-loading" class="loading">loading theme setup...</div>
+            <div class="card-title">Theme Setup</div>
+            <div id="theme-setup-loading" class="loading">Loading theme setup...</div>
             <div id="theme-setup"></div>
         </div>
 
         <div class="card">
-            <div class="card-title">rules</div>
-            <div id="rules-loading" class="loading">loading rules...</div>
+            <div class="card-title">Rules</div>
+            <div id="rules-loading" class="loading">Loading rules...</div>
             <div id="rules-list"></div>
         </div>
     </div>
@@ -494,7 +527,7 @@
         }
 
         function catalogLabel(ruleType) {
-            return ruleType === 'variant' ? 'choose variant' : 'choose product';
+            return ruleType === 'variant' ? 'Choose Variant' : 'Choose Product';
         }
 
         function catalogHelp(ruleType) {
@@ -503,14 +536,22 @@
                 : 'Choose directly from your shop products.';
         }
 
+        function formatRuleType(ruleType) {
+            if (ruleType === 'cart') {
+                return 'Cart-wide';
+            }
+
+            return ruleType ? ruleType.charAt(0).toUpperCase() + ruleType.slice(1) : '-';
+        }
+
         function populateCatalogSelect() {
             const ruleType = getRuleType();
             const select = document.getElementById('catalog-select');
             const entries = catalogCache[ruleType] || [];
-            const placeholder = ruleType === 'variant' ? 'choose a variant' : 'choose a product';
+            const placeholder = ruleType === 'variant' ? 'Choose a variant' : 'Choose a product';
 
             select.innerHTML = `
-                <option value="">${escapeHtml(entries.length ? placeholder : 'no catalog items found')}</option>
+                <option value="">${escapeHtml(entries.length ? placeholder : 'No catalog items found')}</option>
                 ${entries.map((entry) => `
                     <option value="${escapeHtml(entry.id)}" data-title="${escapeHtml(entry.title)}">
                         ${escapeHtml(entry.title)}
@@ -526,7 +567,7 @@
             }
 
             const select = document.getElementById('catalog-select');
-            select.innerHTML = '<option value="">loading catalog...</option>';
+            select.innerHTML = '<option value="">Loading catalog...</option>';
             select.disabled = true;
 
             try {
@@ -599,31 +640,31 @@
                 <div class="setup-grid">
                     <div class="setup-step">
                         <div class="setup-step-number">1</div>
-                        <h3>create a rule</h3>
+                        <h3>Create a Rule</h3>
                         <p>${hasRules ? 'A rule is ready. Keep this page open while you finish the theme setup in another tab.' : 'Create at least one rule in limitpro before you save and test the storefront.'}</p>
                     </div>
 
                     <div class="setup-step">
                         <div class="setup-step-number">2</div>
-                        <h3>turn on cart validator</h3>
+                        <h3>Turn on Cart Validator</h3>
                         <p>This opens the theme editor in a new tab so you can get back to limitpro right away.</p>
-                        ${renderNavigationButton('turn on cart validator', themeSetupContext.links?.embed)}
+                        ${renderNavigationButton('Turn on Cart Validator', themeSetupContext.links?.embed)}
                     </div>
 
                     <div class="setup-step">
                         <div class="setup-step-number">3</div>
-                        <h3>save and test</h3>
+                        <h3>Save and Test</h3>
                         <p>Save the theme, then test the storefront and cart only after you have at least one rule created.</p>
                         <div class="button-group">
-                            ${renderNavigationButton('open storefront', themeSetupContext.links?.storefront, 'button-secondary', 'new-tab', !hasRules)}
-                            ${renderNavigationButton('open cart', themeSetupContext.links?.cart, 'button-secondary', 'new-tab', !hasRules)}
+                            ${renderNavigationButton('Open Storefront', themeSetupContext.links?.storefront, 'button-secondary', 'new-tab', !hasRules)}
+                            ${renderNavigationButton('Open Cart', themeSetupContext.links?.cart, 'button-secondary', 'new-tab', !hasRules)}
                         </div>
                     </div>
                 </div>
 
                 <div class="setup-note">
                     <p>If you want to place the product warning manually, use the product block and move it under product information, below the buy buttons.</p>
-                    ${renderNavigationButton('add product block', themeSetupContext.links?.block, 'button-secondary')}
+                    ${renderNavigationButton('Add Product Block', themeSetupContext.links?.block, 'button-secondary')}
                 </div>
             `;
         }
@@ -672,7 +713,7 @@
                 if (!rules.length) {
                     document.getElementById('rules-list').innerHTML = `
                         <div class="empty-state">
-                            <h3>no rules yet</h3>
+                            <h3>No rules yet</h3>
                             <p>Create your first rule above, then turn on the cart validator.</p>
                         </div>
                     `;
@@ -683,34 +724,34 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>target</th>
-                                <th>type</th>
-                                <th>minimum</th>
-                                <th>maximum</th>
-                                <th>message</th>
-                                <th>status</th>
-                                <th>actions</th>
+                                <th>Target</th>
+                                <th>Type</th>
+                                <th>Minimum</th>
+                                <th>Maximum</th>
+                                <th>Message</th>
+                                <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${rules.map((rule) => `
                                 <tr>
-                                    <td>${escapeHtml(rule.targetTitle || 'cart-wide')}</td>
-                                    <td>${escapeHtml(rule.ruleType)}</td>
+                                    <td>${escapeHtml(rule.targetTitle || 'Cart-wide')}</td>
+                                    <td>${escapeHtml(formatRuleType(rule.ruleType))}</td>
                                     <td>${escapeHtml(rule.minQuantity || '-')}</td>
                                     <td>${escapeHtml(rule.maxQuantity || '-')}</td>
                                     <td class="rule-message">${escapeHtml(rule.message || '-')}</td>
                                     <td>
                                         <span class="badge ${rule.enabled ? 'badge-success' : 'badge-warning'}">
-                                            ${rule.enabled ? 'active' : 'inactive'}
+                                            ${rule.enabled ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
                                     <td>
                                         <div class="button-group">
                                             <button class="button button-secondary" onclick="toggleRule('${rule.id}', ${!rule.enabled})">
-                                                ${rule.enabled ? 'disable' : 'enable'}
+                                                ${rule.enabled ? 'Disable' : 'Enable'}
                                             </button>
-                                            <button class="button button-danger" onclick="deleteRule('${rule.id}')">delete</button>
+                                            <button class="button button-danger" onclick="deleteRule('${rule.id}')">Delete</button>
                                         </div>
                                     </td>
                                 </tr>

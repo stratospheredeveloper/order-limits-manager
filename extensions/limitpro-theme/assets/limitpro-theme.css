@@ -15,6 +15,12 @@
   margin-top: 10px;
 }
 
+[data-limitpro-cart-item-warning] {
+  width: 100%;
+  flex-basis: 100%;
+  grid-column: 1 / -1;
+}
+
 .limitpro-warning {
   border-radius: 10px;
   border: 1px solid #d9b941;
@@ -24,6 +30,16 @@
   font-family: inherit;
   font-size: 13px;
   line-height: 1.45;
+}
+
+[data-limitpro-product-notice] .limitpro-warning {
+  font-size: 15px;
+  line-height: 1.55;
+  padding: 12px 14px;
+}
+
+[data-limitpro-product-notice] .limitpro-warning__message {
+  font-weight: 500;
 }
 
 .limitpro-warning__message + .limitpro-warning__message {
