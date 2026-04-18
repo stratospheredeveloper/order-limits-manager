@@ -9,16 +9,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PrepShipmentStatus {
+  Pending
+  Prepped
+  Shipped
+}
+
 model Shop {
   id                 String   @id
   name               String
   email              String?
+  accessToken        String?
+  grantedScopes      String?
+  installedAt        DateTime?
   subscriptionId     String?
   subscriptionStatus String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   rules              Rule[]
   settings           Settings?
+  prepShipments      PrepShipment[]
 }
 
 model Rule {
@@ -36,6 +46,7 @@ model Rule {
   updatedAt       DateTime @updatedAt
 
   @@index([shopId])
+  @@index([shopId, enabled, ruleType], map: "Rule_shopId_enabled_ruleType_idx")
 }
 
 model Settings {
@@ -49,4 +60,18 @@ model Settings {
   customMessageEnabled  Boolean  @default(false)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+model PrepShipment {
+  id          String             @id @default(uuid())
+  shipmentId  String             @map("shipment_id")
+  units       Int
+  status      PrepShipmentStatus @default(Pending)
+  shopOrigin  String             @map("shop_origin")
+  shop        Shop               @relation(fields: [shopOrigin], references: [id], onDelete: Cascade)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@unique([shipmentId, shopOrigin])
+  @@index([shopOrigin])
 }

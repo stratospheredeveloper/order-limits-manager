@@ -72,6 +72,92 @@
             font-weight: 600;
         }
 
+        .setup-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .setup-status.connected {
+            background: #d4f5e3;
+            color: #108043;
+        }
+
+        .setup-status.pending {
+            background: #fff4d6;
+            color: #8a6116;
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .setup-step {
+            border: 1px solid #e1e3e5;
+            border-radius: 8px;
+            padding: 18px;
+            background: #fbfbfc;
+        }
+
+        .setup-step-number {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #202223;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .setup-step h3 {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .setup-step p {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #4f5255;
+            margin-bottom: 14px;
+        }
+
+        .setup-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .setup-instructions {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 8px;
+            background: #f6f6f7;
+            border: 1px solid #e1e3e5;
+        }
+
+        .setup-instructions ol {
+            padding-left: 20px;
+            color: #202223;
+        }
+
+        .setup-instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
         .form-group {
             margin-bottom: 20px;
             position: relative;
@@ -309,12 +395,17 @@
         }
 
         .autocomplete-item {
+            width: 100%;
             padding: 12px;
             cursor: pointer;
             border-bottom: 1px solid #f1f2f3;
             display: flex;
             align-items: center;
             gap: 12px;
+            background: none;
+            border-left: none;
+            border-right: none;
+            text-align: left;
         }
 
         .autocomplete-item:hover {
@@ -341,6 +432,12 @@
         .autocomplete-item-id {
             font-size: 12px;
             color: #6d7175;
+        }
+
+        .autocomplete-item-subtitle {
+            font-size: 12px;
+            color: #6d7175;
+            margin-top: 2px;
         }
 
         .selected-product {
@@ -416,6 +513,12 @@
                 <div class="store-pill">Connected store: <span id="connected-shop"></span></div>
                 <button class="button button-secondary" type="button" onclick="refreshData()">Refresh data</button>
             </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Theme Setup</div>
+            <div id="theme-setup-loading" class="loading">Checking theme extension setup...</div>
+            <div id="theme-setup"></div>
         </div>
 
         <div class="tabs">
@@ -532,6 +635,10 @@
     <script>
         const API_URL = window.location.origin;
         const queryParams = new URLSearchParams(window.location.search);
+        const PRODUCT_PLACEHOLDER = 'https://via.placeholder.com/50';
+        let selectedProduct = null;
+        let searchTimeout = null;
+        let currentSearchResults = [];
 
         function getShopFromHostParam() {
             const hostParam = queryParams.get('host');
@@ -548,20 +655,58 @@
 
         const SHOP_ID = queryParams.get('shop') || getShopFromHostParam() || 'demo-shop.myshopify.com';
 
-        let selectedProduct = null;
-        let searchTimeout = null;
-
-        function refreshData() {
-            loadRules();
-            loadSettings();
-            showAlert('Data refreshed');
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
-        // Tab switching
+        function getRuleType() {
+            return document.getElementById('rule-type').value;
+        }
+
+        function updateSearchFieldMeta() {
+            const ruleType = getRuleType();
+            const label = document.querySelector('label[for="product-search"]');
+            const input = document.getElementById('product-search');
+            const helpText = document.querySelector('#product-search-group .help-text');
+            const isCartWide = ruleType === 'cart';
+
+            document.getElementById('product-search-group').style.display = isCartWide ? 'none' : 'block';
+
+            if (isCartWide) {
+                removeSelectedProduct();
+                return;
+            }
+
+            if (ruleType === 'variant') {
+                label.textContent = 'Search Variant';
+                input.placeholder = 'Start typing to search variants...';
+                helpText.textContent = 'Search and select a variant from your store';
+            } else {
+                label.textContent = 'Search Product';
+                input.placeholder = 'Start typing to search products...';
+                helpText.textContent = 'Search and select a product from your store';
+            }
+        }
+
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => alert.remove(), 5000);
+        }
+
         function switchTab(tabName, tabButton) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
+            document.querySelectorAll('.tab').forEach((tab) => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach((content) => content.classList.remove('active'));
+
             tabButton.classList.add('active');
             document.getElementById(`${tabName}-tab`).classList.add('active');
 
@@ -570,95 +715,161 @@
             }
         }
 
-        // Alert messages
-        function showAlert(message, type = 'success') {
-            const alertContainer = document.getElementById('alert-container');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.textContent = message;
-            alertContainer.appendChild(alert);
-            
-            setTimeout(() => alert.remove(), 5000);
+        async function fetchJson(url, options) {
+            const response = await fetch(url, options);
+            const data = await response.json();
+            return { response, data };
         }
 
-        // Toggle product search based on rule type
-        document.getElementById('rule-type').addEventListener('change', (e) => {
-            const isCartWide = e.target.value === 'cart';
-            document.getElementById('product-search-group').style.display = isCartWide ? 'none' : 'block';
-            
-            if (isCartWide) {
-                removeSelectedProduct();
-            }
-        });
+        async function loadThemeSetup() {
+            const loading = document.getElementById('theme-setup-loading');
+            const container = document.getElementById('theme-setup');
 
-        // Product search autocomplete
-        document.getElementById('product-search').addEventListener('input', (e) => {
-            const query = e.target.value.trim();
-            
-            clearTimeout(searchTimeout);
-            
-            if (query.length < 2) {
-                document.getElementById('autocomplete-results').classList.remove('active');
-                return;
-            }
-            
-            searchTimeout = setTimeout(() => searchProducts(query), 300);
-        });
+            loading.style.display = 'block';
+            container.innerHTML = '';
 
-        async function searchProducts(query) {
             try {
-                const response = await fetch(`${API_URL}/api/products/search?shop=${SHOP_ID}&q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    displayAutocompleteResults(data.products);
+                const { response, data } = await fetchJson(`${API_URL}/api/theme/setup?shop=${encodeURIComponent(SHOP_ID)}`);
+
+                if (response.status === 401 && data.authUrl) {
+                    container.innerHTML = `
+                        <div class="setup-meta">
+                            <span class="setup-status pending">Shopify access required</span>
+                            <a class="button" href="${data.authUrl}">Reconnect Shopify</a>
+                        </div>
+                        <div class="setup-instructions">
+                            <ol>
+                                <li>Reconnect the store so LimitPro can load live products and your active theme.</li>
+                                <li>After reconnecting, use the setup links below to enable the app embed and preview the product app block.</li>
+                            </ol>
+                        </div>
+                    `;
+                    return;
                 }
+
+                const themeName = data.theme?.name ? escapeHtml(data.theme.name) : 'Current live theme';
+                const themeBadge = data.theme?.name
+                    ? `<span class="setup-status connected">Live theme: ${themeName}</span>`
+                    : '<span class="setup-status connected">Live theme link ready</span>';
+
+                container.innerHTML = `
+                    <div class="setup-meta">
+                        ${themeBadge}
+                        <a class="button button-secondary" href="${data.links.themeEditor}" target="_blank" rel="noopener">Open Theme Editor</a>
+                    </div>
+
+                    <div class="setup-grid">
+                        <div class="setup-step">
+                            <div class="setup-step-number">1</div>
+                            <h3>Enable the app embed</h3>
+                            <p>Required for every store. This turns on the cart validator that shows your custom messages and blocks checkout when a rule fails, without touching theme code.</p>
+                            <a class="button" href="${data.links.embed}" target="_blank" rel="noopener">Activate App Embed</a>
+                        </div>
+
+                        <div class="setup-step">
+                            <div class="setup-step-number">2</div>
+                            <h3>Add the product app block</h3>
+                            <p>Optional for Online Store 2.0 themes. Add the product notice block to your default product template if you want customers to see product-level limits before adding items to cart.</p>
+                            <a class="button button-secondary" href="${data.links.block}" target="_blank" rel="noopener">Preview App Block</a>
+                        </div>
+
+                        <div class="setup-step">
+                            <div class="setup-step-number">3</div>
+                            <h3>Save and test</h3>
+                            <p>Save the theme changes, preview the storefront, add products with active rules, and confirm the warning text and checkout behavior match the rules saved in LimitPro.</p>
+                            <a class="button button-secondary" href="${data.links.themeEditor}" target="_blank" rel="noopener">Open Theme Again</a>
+                        </div>
+                    </div>
+
+                    <div class="setup-instructions">
+                        <ol>
+                            <li>In Theme settings &gt; App embeds, turn on <strong>Cart validator</strong>, then click <strong>Save</strong>. This embed works on all Shopify themes.</li>
+                            <li>From the Apps section of the product template, add <strong>Product limit notice</strong> if you want to show product-level guidance before checkout. Merchants can move or remove this block at any time in the theme editor.</li>
+                            <li>After saving, preview the storefront and test both states: a valid cart and a blocked cart. Your custom rule messages are controlled in LimitPro, not in the theme editor.</li>
+                        </ol>
+                    </div>
+                `;
             } catch (error) {
-                console.error('Search error:', error);
+                console.error('Error loading theme setup:', error);
+                container.innerHTML = `
+                    <div class="setup-meta">
+                        <span class="setup-status pending">Theme setup unavailable</span>
+                    </div>
+                    <div class="setup-instructions">
+                        <ol>
+                            <li>Reconnect the store if prompted.</li>
+                            <li>Then enable the app embed in Theme settings &gt; App embeds and save the theme.</li>
+                        </ol>
+                    </div>
+                `;
+            } finally {
+                loading.style.display = 'none';
             }
         }
 
-        function displayAutocompleteResults(products) {
+        function renderAutocompleteResults(products) {
             const resultsContainer = document.getElementById('autocomplete-results');
-            
+            currentSearchResults = products;
+
             if (products.length === 0) {
-                resultsContainer.innerHTML = '<div style="padding: 12px; color: #6d7175;">No products found</div>';
+                resultsContainer.innerHTML = '<div style="padding: 12px; color: #6d7175;">No results found</div>';
                 resultsContainer.classList.add('active');
                 return;
             }
-            
-            resultsContainer.innerHTML = products.map(product => `
-                <div class="autocomplete-item" onclick='selectProduct(${JSON.stringify(product)})'>
-                    <img src="${product.image || 'https://via.placeholder.com/40'}" alt="${product.title}">
+
+            resultsContainer.innerHTML = products.map((product, index) => `
+                <button type="button" class="autocomplete-item" data-result-index="${index}">
+                    <img src="${escapeHtml(product.image || PRODUCT_PLACEHOLDER)}" alt="${escapeHtml(product.title)}">
                     <div class="autocomplete-item-text">
-                        <div class="autocomplete-item-title">${product.title}</div>
-                        <div class="autocomplete-item-id">ID: ${product.id}</div>
+                        <div class="autocomplete-item-title">${escapeHtml(product.title)}</div>
+                        <div class="autocomplete-item-id">ID: ${escapeHtml(product.id)}</div>
+                        ${product.subtitle ? `<div class="autocomplete-item-subtitle">${escapeHtml(product.subtitle)}</div>` : ''}
                     </div>
-                </div>
+                </button>
             `).join('');
-            
+
             resultsContainer.classList.add('active');
+        }
+
+        async function searchProducts(query) {
+            try {
+                const ruleType = getRuleType();
+                const { response, data } = await fetchJson(
+                    `${API_URL}/api/products/search?shop=${encodeURIComponent(SHOP_ID)}&type=${encodeURIComponent(ruleType)}&q=${encodeURIComponent(query)}`
+                );
+
+                if (response.status === 401 && data.authUrl) {
+                    showAlert('Reconnect Shopify to load live products from the store.', 'error');
+                    window.location.href = data.authUrl;
+                    return;
+                }
+
+                if (data.success) {
+                    renderAutocompleteResults(data.products);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showAlert('Failed to search products', 'error');
+            }
         }
 
         function selectProduct(product) {
             selectedProduct = product;
-            
+
             document.getElementById('product-search').value = product.title;
             document.getElementById('autocomplete-results').classList.remove('active');
-            
             document.getElementById('target-id').value = product.id;
             document.getElementById('target-title').value = product.title;
-            
-            document.getElementById('selected-product-image').src = product.image || 'https://via.placeholder.com/50';
+            document.getElementById('selected-product-image').src = product.image || PRODUCT_PLACEHOLDER;
             document.getElementById('selected-product-title').textContent = product.title;
             document.getElementById('selected-product-id').textContent = product.id;
             document.getElementById('selected-product').classList.add('active');
-            
             document.getElementById('product-search').style.display = 'none';
         }
 
         function removeSelectedProduct() {
             selectedProduct = null;
+            currentSearchResults = [];
             document.getElementById('product-search').value = '';
             document.getElementById('product-search').style.display = 'block';
             document.getElementById('target-id').value = '';
@@ -667,21 +878,11 @@
             document.getElementById('autocomplete-results').classList.remove('active');
         }
 
-        // Close autocomplete when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.autocomplete-wrapper')) {
-                document.getElementById('autocomplete-results').classList.remove('active');
-            }
-        });
-
-        // Load rules
         async function loadRules() {
             try {
-                const response = await fetch(`${API_URL}/api/rules?shop=${SHOP_ID}`);
-                const data = await response.json();
-                
+                const { data } = await fetchJson(`${API_URL}/api/rules?shop=${encodeURIComponent(SHOP_ID)}`);
                 document.getElementById('rules-loading').style.display = 'none';
-                
+
                 if (!data.success || data.rules.length === 0) {
                     document.getElementById('rules-list').innerHTML = `
                         <div class="empty-state">
@@ -692,7 +893,7 @@
                     return;
                 }
 
-                const table = `
+                document.getElementById('rules-list').innerHTML = `
                     <table>
                         <thead>
                             <tr>
@@ -705,12 +906,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            ${data.rules.map(rule => `
+                            ${data.rules.map((rule) => `
                                 <tr>
-                                    <td>${rule.targetTitle || 'Cart-wide'}</td>
-                                    <td>${rule.ruleType}</td>
-                                    <td>${rule.minQuantity || '-'}</td>
-                                    <td>${rule.maxQuantity || '-'}</td>
+                                    <td>${escapeHtml(rule.targetTitle || 'Cart-wide')}</td>
+                                    <td>${escapeHtml(rule.ruleType)}</td>
+                                    <td>${escapeHtml(rule.minQuantity || '-')}</td>
+                                    <td>${escapeHtml(rule.maxQuantity || '-')}</td>
                                     <td>
                                         <span class="badge ${rule.enabled ? 'badge-success' : 'badge-warning'}">
                                             ${rule.enabled ? 'Active' : 'Inactive'}
@@ -731,112 +932,15 @@
                         </tbody>
                     </table>
                 `;
-                
-                document.getElementById('rules-list').innerHTML = table;
             } catch (error) {
                 console.error('Error loading rules:', error);
                 showAlert('Failed to load rules', 'error');
             }
         }
 
-        // Create rule
-        document.getElementById('create-rule-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const ruleType = document.getElementById('rule-type').value;
-            const targetId = document.getElementById('target-id').value;
-            const targetTitle = document.getElementById('target-title').value;
-            const minQuantity = document.getElementById('min-quantity').value;
-            const maxQuantity = document.getElementById('max-quantity').value;
-            const message = document.getElementById('custom-message').value;
-
-            if (ruleType !== 'cart' && !targetId) {
-                showAlert('Please select a product', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/api/rules`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        shop: SHOP_ID,
-                        ruleType,
-                        targetId: ruleType === 'cart' ? null : targetId,
-                        targetTitle: ruleType === 'cart' ? null : targetTitle,
-                        minQuantity: minQuantity || null,
-                        maxQuantity: maxQuantity || null,
-                        message: message || null
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showAlert('Rule created successfully!');
-                    e.target.reset();
-                    removeSelectedProduct();
-                    loadRules();
-                } else {
-                    showAlert('Failed to create rule', 'error');
-                }
-            } catch (error) {
-                console.error('Error creating rule:', error);
-                showAlert('Failed to create rule', 'error');
-            }
-        });
-
-        // Toggle rule
-        async function toggleRule(ruleId, enabled) {
-            try {
-                const response = await fetch(`${API_URL}/api/rules/${ruleId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enabled })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showAlert(`Rule ${enabled ? 'enabled' : 'disabled'} successfully!`);
-                    loadRules();
-                } else {
-                    showAlert('Failed to update rule', 'error');
-                }
-            } catch (error) {
-                console.error('Error updating rule:', error);
-                showAlert('Failed to update rule', 'error');
-            }
-        }
-
-        // Delete rule
-        async function deleteRule(ruleId) {
-            if (!confirm('Are you sure you want to delete this rule?')) return;
-
-            try {
-                const response = await fetch(`${API_URL}/api/rules/${ruleId}`, {
-                    method: 'DELETE'
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showAlert('Rule deleted successfully!');
-                    loadRules();
-                } else {
-                    showAlert('Failed to delete rule', 'error');
-                }
-            } catch (error) {
-                console.error('Error deleting rule:', error);
-                showAlert('Failed to delete rule', 'error');
-            }
-        }
-
-        // Load settings
         async function loadSettings() {
             try {
-                const response = await fetch(`${API_URL}/api/settings?shop=${SHOP_ID}`);
-                const data = await response.json();
+                const { data } = await fetchJson(`${API_URL}/api/settings?shop=${encodeURIComponent(SHOP_ID)}`);
 
                 if (data.success) {
                     const settings = data.settings;
@@ -850,9 +954,130 @@
             }
         }
 
-        // Save settings
-        document.getElementById('settings-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        async function refreshData() {
+            await Promise.all([loadThemeSetup(), loadRules(), loadSettings()]);
+            showAlert('Data refreshed');
+        }
+
+        async function toggleRule(ruleId, enabled) {
+            try {
+                const { data } = await fetchJson(`${API_URL}/api/rules/${ruleId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled }),
+                });
+
+                if (data.success) {
+                    showAlert(`Rule ${enabled ? 'enabled' : 'disabled'} successfully!`);
+                    loadRules();
+                } else {
+                    showAlert('Failed to update rule', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating rule:', error);
+                showAlert('Failed to update rule', 'error');
+            }
+        }
+
+        async function deleteRule(ruleId) {
+            if (!confirm('Are you sure you want to delete this rule?')) return;
+
+            try {
+                const { data } = await fetchJson(`${API_URL}/api/rules/${ruleId}`, {
+                    method: 'DELETE',
+                });
+
+                if (data.success) {
+                    showAlert('Rule deleted successfully!');
+                    loadRules();
+                } else {
+                    showAlert('Failed to delete rule', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting rule:', error);
+                showAlert('Failed to delete rule', 'error');
+            }
+        }
+
+        document.getElementById('rule-type').addEventListener('change', () => {
+            updateSearchFieldMeta();
+        });
+
+        document.getElementById('product-search').addEventListener('input', (event) => {
+            const query = event.target.value.trim();
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                document.getElementById('autocomplete-results').classList.remove('active');
+                return;
+            }
+
+            searchTimeout = setTimeout(() => searchProducts(query), 300);
+        });
+
+        document.getElementById('autocomplete-results').addEventListener('click', (event) => {
+            const resultButton = event.target.closest('[data-result-index]');
+            if (!resultButton) return;
+
+            const product = currentSearchResults[Number(resultButton.dataset.resultIndex)];
+            if (product) {
+                selectProduct(product);
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.autocomplete-wrapper')) {
+                document.getElementById('autocomplete-results').classList.remove('active');
+            }
+        });
+
+        document.getElementById('create-rule-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const ruleType = getRuleType();
+            const targetId = document.getElementById('target-id').value;
+            const targetTitle = document.getElementById('target-title').value;
+            const minQuantity = document.getElementById('min-quantity').value;
+            const maxQuantity = document.getElementById('max-quantity').value;
+            const message = document.getElementById('custom-message').value;
+
+            if (ruleType !== 'cart' && !targetId) {
+                showAlert(ruleType === 'variant' ? 'Please select a variant' : 'Please select a product', 'error');
+                return;
+            }
+
+            try {
+                const { data } = await fetchJson(`${API_URL}/api/rules`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        shop: SHOP_ID,
+                        ruleType,
+                        targetId: ruleType === 'cart' ? null : targetId,
+                        targetTitle: ruleType === 'cart' ? null : targetTitle,
+                        minQuantity: minQuantity || null,
+                        maxQuantity: maxQuantity || null,
+                        message: message || null,
+                    }),
+                });
+
+                if (data.success) {
+                    showAlert('Rule created successfully!');
+                    event.target.reset();
+                    removeSelectedProduct();
+                    updateSearchFieldMeta();
+                    loadRules();
+                } else {
+                    showAlert('Failed to create rule', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating rule:', error);
+                showAlert('Failed to create rule', 'error');
+            }
+        });
+
+        document.getElementById('settings-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
 
             const globalMinCart = document.getElementById('global-min-cart').value;
             const globalMaxCart = document.getElementById('global-max-cart').value;
@@ -860,7 +1085,7 @@
             const blockCheckout = document.getElementById('block-checkout').checked;
 
             try {
-                const response = await fetch(`${API_URL}/api/settings`, {
+                const { data } = await fetchJson(`${API_URL}/api/settings`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -868,11 +1093,9 @@
                         globalMinCart: globalMinCart || null,
                         globalMaxCart: globalMaxCart || null,
                         showCartWarning,
-                        blockCheckout
-                    })
+                        blockCheckout,
+                    }),
                 });
-
-                const data = await response.json();
 
                 if (data.success) {
                     showAlert('Settings saved successfully!');
@@ -885,9 +1108,16 @@
             }
         });
 
-        // Load rules on page load
         document.getElementById('connected-shop').textContent = SHOP_ID;
+        updateSearchFieldMeta();
+        loadThemeSetup();
         loadRules();
+        loadSettings();
+
+        window.toggleRule = toggleRule;
+        window.deleteRule = deleteRule;
+        window.removeSelectedProduct = removeSelectedProduct;
+        window.refreshData = refreshData;
     </script>
 </body>
 </html>

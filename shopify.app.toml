@@ -1,38 +1,20 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-name = "my-order-limits"
-client_id = "f5dab3c6fac8fd86cfdf7b9689708208"
-application_url = "application_url = "https://order-limits-manager-production.up.railway.app"
-embedded = true
-
-[build]
-automatically_update_urls_on_dev = true
-
-[access_scopes]
-scopes = "read_products,write_themes,read_orders"
-
-[auth]
-redirect_urls = [
-  "https://order-limits-manager-production.up.railway.app/api/auth/callback"
-]
-
-[webhooks]
-api_version = "2024-01"
-
-[pos]
+name = "limitpro"
+client_id = "f5dab3c6fac8fd86cfdf7b9609708208"
+application_url = "https://order-limits-manager-production.up.railway.app"
 embedded = false
 
+[access_scopes]
+scopes = "read_products,read_themes,read_orders"
+
+[auth]
+redirect_urls = ["https://order-limits-manager-production.up.railway.app/api/auth/callback"]
+
 [webhooks]
 api_version = "2024-01"
 
-[[webhooks.subscriptions]]
-topics = ["customers/data_request"]
-uri = "/webhooks/customers/data_request"
-
-[[webhooks.subscriptions]]
-topics = ["customers/redact"]
-uri = "/webhooks/customers/redact"
-
-[[webhooks.subscriptions]]
-topics = ["shop/redact"]
-uri = "/webhooks/shop/redact"
+[webhooks.privacy_compliance]
+customer_deletion_url = "https://order-limits-manager-production.up.railway.app/webhooks/customers/redact"
+customer_data_request_url = "https://order-limits-manager-production.up.railway.app/webhooks/customers/data_request"
+shop_deletion_url = "https://order-limits-manager-production.up.railway.app/webhooks/shop/redact"

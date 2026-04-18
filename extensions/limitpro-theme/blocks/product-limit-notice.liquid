@@ -1,0 +1,37 @@
+{% assign limitpro_app_url = 'https://order-limits-manager-production.up.railway.app' %}
+{% if product %}
+  <div
+    data-limitpro-product-notice
+    data-shop="{{ shop.permanent_domain | escape }}"
+    data-product-id="{{ product.id }}"
+    data-api-base="{{ limitpro_app_url | escape }}"
+    data-heading="{{ block.settings.heading | escape }}"
+    data-show-empty="{{ block.settings.show_when_empty }}"
+  ></div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Product limit notice",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "stylesheet": "limitpro-theme.css",
+  "javascript": "limitpro-theme.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Order limits"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_when_empty",
+      "label": "Show placeholder when no product-specific rule exists",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

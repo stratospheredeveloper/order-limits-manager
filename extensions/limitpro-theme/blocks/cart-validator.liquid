@@ -1,0 +1,16 @@
+{% assign limitpro_app_url = 'https://order-limits-manager-production.up.railway.app' %}
+<div
+  data-limitpro-cart-validator
+  data-shop="{{ shop.permanent_domain | escape }}"
+  data-api-base="{{ limitpro_app_url | escape }}"
+></div>
+
+{% schema %}
+{
+  "name": "Cart validator",
+  "target": "body",
+  "stylesheet": "limitpro-theme.css",
+  "javascript": "limitpro-theme.js",
+  "settings": []
+}
+{% endschema %}
