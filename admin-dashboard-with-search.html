@@ -664,6 +664,53 @@
                 .replace(/'/g, '&#39;');
         }
 
+        function renderNavigationButton(label, url, variant = '') {
+            const className = ['button', variant].filter(Boolean).join(' ');
+            const normalizedUrl = typeof url === 'string' ? url.trim() : '';
+
+            if (!normalizedUrl) {
+                return `<button type="button" class="${className}" disabled>${escapeHtml(label)}</button>`;
+            }
+
+            return `
+                <button
+                    type="button"
+                    class="${className}"
+                    data-open-url="${escapeHtml(normalizedUrl)}"
+                >${escapeHtml(label)}</button>
+            `;
+        }
+
+        function openThemeSetupLink(rawUrl) {
+            const normalizedUrl = typeof rawUrl === 'string' ? rawUrl.trim() : '';
+
+            if (!normalizedUrl) {
+                showAlert('This theme editor link is not ready yet. Refresh the page and try again.', 'error');
+                return;
+            }
+
+            let absoluteUrl;
+
+            try {
+                absoluteUrl = new URL(normalizedUrl, window.location.origin).toString();
+            } catch (error) {
+                console.error('Invalid theme setup link:', normalizedUrl, error);
+                showAlert('The generated theme editor link is invalid. Refresh the page and try again.', 'error');
+                return;
+            }
+
+            try {
+                if (window.top && window.top !== window) {
+                    window.top.location.href = absoluteUrl;
+                    return;
+                }
+            } catch (error) {
+                console.warn('Top window navigation failed, falling back to same-window navigation.', error);
+            }
+
+            window.location.assign(absoluteUrl);
+        }
+
         function getRuleType() {
             return document.getElementById('rule-type').value;
         }
@@ -735,7 +782,7 @@
                     container.innerHTML = `
                         <div class="setup-meta">
                             <span class="setup-status pending">Shopify access required</span>
-                            <a class="button" href="${data.authUrl}">Reconnect Shopify</a>
+                            ${renderNavigationButton('Reconnect Shopify', data.authUrl)}
                         </div>
                         <div class="setup-instructions">
                             <ol>
@@ -755,7 +802,7 @@
                 container.innerHTML = `
                     <div class="setup-meta">
                         ${themeBadge}
-                        <a class="button button-secondary" href="${data.links.themeEditor}" target="_blank" rel="noopener">Open Theme Editor</a>
+                        ${renderNavigationButton('Open Theme Editor', data.links?.themeEditor, 'button-secondary')}
                     </div>
 
                     <div class="setup-grid">
@@ -763,21 +810,21 @@
                             <div class="setup-step-number">1</div>
                             <h3>Enable the app embed</h3>
                             <p>Required for every store. This turns on the cart validator that shows your custom messages and blocks checkout when a rule fails, without touching theme code.</p>
-                            <a class="button" href="${data.links.embed}" target="_blank" rel="noopener">Activate App Embed</a>
+                            ${renderNavigationButton('Activate App Embed', data.links?.embed)}
                         </div>
 
                         <div class="setup-step">
                             <div class="setup-step-number">2</div>
                             <h3>Add the product app block</h3>
                             <p>Optional for Online Store 2.0 themes. Add the product notice block to your default product template if you want customers to see product-level limits before adding items to cart.</p>
-                            <a class="button button-secondary" href="${data.links.block}" target="_blank" rel="noopener">Preview App Block</a>
+                            ${renderNavigationButton('Preview App Block', data.links?.block, 'button-secondary')}
                         </div>
 
                         <div class="setup-step">
                             <div class="setup-step-number">3</div>
                             <h3>Save and test</h3>
                             <p>Save the theme changes, preview the storefront, add products with active rules, and confirm the warning text and checkout behavior match the rules saved in LimitPro.</p>
-                            <a class="button button-secondary" href="${data.links.themeEditor}" target="_blank" rel="noopener">Open Theme Again</a>
+                            ${renderNavigationButton('Open Theme Again', data.links?.themeEditor, 'button-secondary')}
                         </div>
                     </div>
 
@@ -1026,6 +1073,12 @@
         });
 
         document.addEventListener('click', (event) => {
+            const navigationButton = event.target.closest('[data-open-url]');
+            if (navigationButton) {
+                openThemeSetupLink(navigationButton.dataset.openUrl);
+                return;
+            }
+
             if (!event.target.closest('.autocomplete-wrapper')) {
                 document.getElementById('autocomplete-results').classList.remove('active');
             }
