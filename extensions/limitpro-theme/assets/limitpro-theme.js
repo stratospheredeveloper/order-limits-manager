@@ -20,6 +20,26 @@
   let rerunCartValidation = false;
   let productRuleCacheKey = null;
   let productRuleCache = [];
+  let pendingProductWarningRefresh = null;
+
+  const productFormSelectors = [
+    'product-form',
+    'form[action*="/cart/add"]',
+    '.product-form',
+  ];
+
+  const productVariantFieldSelectors = [
+    '[name="id"]',
+    'select[name="id"]',
+    'input[name="id"][form]',
+  ];
+
+  const productQuantityFieldSelectors = [
+    'input[name="quantity"]',
+    '.quantity__input',
+    'quantity-input input[type="number"]',
+    'input[type="number"][name*="quantity"]',
+  ];
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -79,6 +99,15 @@
     return candidates.find(isVisibleElement) || candidates[0] || null;
   }
 
+  function firstActiveElementWithin(root, selectors) {
+    if (!root) {
+      return null;
+    }
+
+    const candidates = Array.from(root.querySelectorAll(selectors.join(', ')));
+    return candidates.find(isVisibleElement) || candidates[0] || null;
+  }
+
   function warningMarkup(messages) {
     return `
       <div class="limitpro-warning" role="status" aria-live="polite">
@@ -134,25 +163,63 @@
       || null;
   }
 
-  function currentVariantId() {
-    const variantInput = firstActiveElement([
-      'form[action*="/cart/add"] [name="id"]',
-      'product-form [name="id"]',
-      'input[name="id"][form]',
-      'select[name="id"]',
+  function activeProductForm() {
+    const addButton = firstActiveElement([
+      'form[action*="/cart/add"] button[name="add"]',
+      'product-form button[name="add"]',
+      'form[action*="/cart/add"] button[type="submit"]',
+      'product-form button[type="submit"]',
+      '.product-form button[name="add"]',
+      '.product-form button[type="submit"]',
     ]);
+
+    if (addButton) {
+      return addButton.closest(productFormSelectors.join(', '));
+    }
+
+    return firstActiveElement(productFormSelectors);
+  }
+
+  function currentVariantId() {
+    const form = activeProductForm();
+    const variantInput = firstActiveElementWithin(form, productVariantFieldSelectors)
+      || firstActiveElement([
+        'form[action*="/cart/add"] [name="id"]',
+        'product-form [name="id"]',
+        'input[name="id"][form]',
+        'select[name="id"]',
+      ]);
 
     return variantInput?.value || cartRoot?.dataset.variantId || manualProductRoots[0]?.dataset.variantId || null;
   }
 
   function currentProductQuantity() {
-    const quantityInput = firstActiveElement([
-      'form[action*="/cart/add"] input[name="quantity"]',
-      'product-form input[name="quantity"]',
-      'input[name="quantity"][form]',
-    ]);
+    const form = activeProductForm();
+    const quantityInput = firstActiveElementWithin(form, productQuantityFieldSelectors)
+      || firstActiveElement([
+        'form[action*="/cart/add"] input[name="quantity"]',
+        'form[action*="/cart/add"] .quantity__input',
+        'product-form input[name="quantity"]',
+        'product-form .quantity__input',
+        'input[name="quantity"][form]',
+      ]);
 
     return Math.max(1, Number(quantityInput?.value) || 1);
+  }
+
+  function scheduleProductWarningRefresh(runImmediately = false) {
+    if (runImmediately) {
+      renderProductWarnings();
+    }
+
+    if (pendingProductWarningRefresh) {
+      window.clearTimeout(pendingProductWarningRefresh);
+    }
+
+    pendingProductWarningRefresh = window.setTimeout(() => {
+      pendingProductWarningRefresh = null;
+      renderProductWarnings();
+    }, 140);
   }
 
   function findProductNoticeMount() {
@@ -537,21 +604,25 @@
 
   function initProductListeners() {
     document.addEventListener('input', (event) => {
-      if (event.target.matches('form[action*="/cart/add"] input[name="quantity"], product-form input[name="quantity"], input[name="quantity"][form]')) {
-        renderProductWarnings();
+      if (event.target.matches('form[action*="/cart/add"] input[name="quantity"], form[action*="/cart/add"] .quantity__input, product-form input[name="quantity"], product-form .quantity__input, input[name="quantity"][form]')) {
+        scheduleProductWarningRefresh(true);
       }
     }, true);
 
     document.addEventListener('change', (event) => {
       if (event.target.matches('form[action*="/cart/add"] [name="id"], product-form [name="id"], select[name="id"]')) {
         clearProductRuleCache();
-        renderProductWarnings();
+        scheduleProductWarningRefresh(true);
+      }
+
+      if (event.target.matches('form[action*="/cart/add"] input[name="quantity"], form[action*="/cart/add"] .quantity__input, product-form input[name="quantity"], product-form .quantity__input, input[name="quantity"][form]')) {
+        scheduleProductWarningRefresh(true);
       }
     }, true);
 
     document.addEventListener('click', (event) => {
-      if (event.target.closest('form[action*="/cart/add"] .quantity__button, product-form .quantity__button, form[action*="/cart/add"] button[name="plus"], form[action*="/cart/add"] button[name="minus"]')) {
-        window.setTimeout(renderProductWarnings, 0);
+      if (event.target.closest('form[action*="/cart/add"] .quantity__button, product-form .quantity__button, form[action*="/cart/add"] button[name="plus"], form[action*="/cart/add"] button[name="minus"], quantity-input button')) {
+        scheduleProductWarningRefresh();
       }
     }, true);
   }
