@@ -41,6 +41,16 @@
     'input[type="number"][name*="quantity"]',
   ];
 
+  const productContextSelectors = [
+    '.product__info-container',
+    '.product__info-wrapper',
+    '.product__column-sticky',
+    '.product',
+    '.featured-product',
+    '.shopify-section',
+    'main',
+  ];
+
   function escapeHtml(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;')
@@ -108,6 +118,10 @@
     return candidates.find(isVisibleElement) || candidates[0] || null;
   }
 
+  function uniqueElements(elements) {
+    return Array.from(new Set(elements.filter(Boolean)));
+  }
+
   function warningMarkup(messages) {
     return `
       <div class="limitpro-warning" role="status" aria-live="polite">
@@ -155,8 +169,9 @@
     });
   }
 
-  function currentProductId() {
-    return cartRoot?.dataset.productId
+  function currentProductId(root = null) {
+    return root?.dataset.productId
+      || cartRoot?.dataset.productId
       || manualProductRoots[0]?.dataset.productId
       || window?.ShopifyAnalytics?.meta?.product?.id?.toString()
       || window?.meta?.product?.id?.toString()
@@ -180,29 +195,54 @@
     return firstActiveElement(productFormSelectors);
   }
 
-  function currentVariantId() {
+  function productContexts(root = null) {
     const form = activeProductForm();
-    const variantInput = firstActiveElementWithin(form, productVariantFieldSelectors)
-      || firstActiveElement([
-        'form[action*="/cart/add"] [name="id"]',
-        'product-form [name="id"]',
-        'input[name="id"][form]',
-        'select[name="id"]',
-      ]);
+    const mount = findProductNoticeMount();
+    const rootContext = root?.closest(productContextSelectors.join(', '));
+    const formContext = form?.closest(productContextSelectors.join(', '));
+    const mountContext = mount?.closest(productContextSelectors.join(', '));
 
-    return variantInput?.value || cartRoot?.dataset.variantId || manualProductRoots[0]?.dataset.variantId || null;
+    return uniqueElements([
+      root,
+      form,
+      mount,
+      rootContext,
+      formContext,
+      mountContext,
+      firstActiveElement(productContextSelectors),
+    ]);
   }
 
-  function currentProductQuantity() {
-    const form = activeProductForm();
-    const quantityInput = firstActiveElementWithin(form, productQuantityFieldSelectors)
-      || firstActiveElement([
-        'form[action*="/cart/add"] input[name="quantity"]',
-        'form[action*="/cart/add"] .quantity__input',
-        'product-form input[name="quantity"]',
-        'product-form .quantity__input',
-        'input[name="quantity"][form]',
-      ]);
+  function findProductField(root, selectors, fallbackSelectors = selectors) {
+    for (const context of productContexts(root)) {
+      const field = firstActiveElementWithin(context, selectors);
+      if (field) {
+        return field;
+      }
+    }
+
+    return firstActiveElement(fallbackSelectors);
+  }
+
+  function currentVariantId(root = null) {
+    const variantInput = findProductField(root, productVariantFieldSelectors, [
+      'form[action*="/cart/add"] [name="id"]',
+      'product-form [name="id"]',
+      'input[name="id"][form]',
+      'select[name="id"]',
+    ]);
+
+    return variantInput?.value || root?.dataset.variantId || cartRoot?.dataset.variantId || manualProductRoots[0]?.dataset.variantId || null;
+  }
+
+  function currentProductQuantity(root = null) {
+    const quantityInput = findProductField(root, productQuantityFieldSelectors, [
+      'form[action*="/cart/add"] input[name="quantity"]',
+      'form[action*="/cart/add"] .quantity__input',
+      'product-form input[name="quantity"]',
+      'product-form .quantity__input',
+      'input[name="quantity"][form]',
+    ]);
 
     return Math.max(1, Number(quantityInput?.value) || 1);
   }
@@ -284,14 +324,13 @@
     return roots;
   }
 
-  async function fetchProductRules() {
-    const productId = currentProductId();
+  async function fetchProductRules(productId = currentProductId(), variantId = currentVariantId()) {
     if (!productId) {
       return [];
     }
 
-    const variantId = currentVariantId() || '';
-    const cacheKey = `${shopDomain()}::${productId}::${variantId}`;
+    const normalizedVariantId = variantId || '';
+    const cacheKey = `${shopDomain()}::${productId}::${normalizedVariantId}`;
     if (productRuleCacheKey === cacheKey) {
       return productRuleCache;
     }
@@ -301,8 +340,8 @@
       productId,
     });
 
-    if (variantId) {
-      params.set('variantId', variantId);
+    if (normalizedVariantId) {
+      params.set('variantId', normalizedVariantId);
     }
 
     const result = await fetchJson(buildApiUrl(apiBase(), `api/storefront/product-rules?${params.toString()}`));
@@ -334,20 +373,39 @@
       return;
     }
 
-    const productId = currentProductId();
-    if (!productId) {
+    const contexts = roots.map((root) => ({
+      root,
+      productId: currentProductId(root),
+      variantId: currentVariantId(root) || '',
+      quantity: currentProductQuantity(root),
+    }));
+
+    if (!contexts.some((context) => context.productId)) {
       roots.forEach((root) => renderWarningHost(root, []));
       return;
     }
 
     try {
-      const rules = await fetchProductRules();
-      const messages = evaluateRuleMessages(rules, currentProductQuantity());
+      const rulesByTarget = new Map();
 
-      roots.forEach((root) => {
-        root.dataset.productId = productId;
-        root.dataset.variantId = currentVariantId() || '';
-        renderWarningHost(root, messages);
+      for (const context of contexts) {
+        if (!context.productId) {
+          continue;
+        }
+
+        const cacheKey = `${context.productId}::${context.variantId}`;
+        if (!rulesByTarget.has(cacheKey)) {
+          rulesByTarget.set(cacheKey, await fetchProductRules(context.productId, context.variantId));
+        }
+      }
+
+      contexts.forEach((context) => {
+        const rules = context.productId ? (rulesByTarget.get(`${context.productId}::${context.variantId}`) || []) : [];
+        const messages = evaluateRuleMessages(rules, context.quantity);
+
+        context.root.dataset.productId = context.productId || '';
+        context.root.dataset.variantId = context.variantId;
+        renderWarningHost(context.root, messages);
       });
     } catch (error) {
       console.error('limitpro product warning failed:', error);
