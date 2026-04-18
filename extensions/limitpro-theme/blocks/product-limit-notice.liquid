@@ -6,6 +6,8 @@
     data-product-id="{{ product.id }}"
     data-variant-id="{{ product.selected_or_first_available_variant.id }}"
     data-api-base="{{ limitpro_app_url | escape }}"
+    data-show-placeholder="{{ block.settings.show_placeholder }}"
+    hidden
   ></div>
 {% endif %}
 
@@ -18,6 +20,13 @@
   },
   "stylesheet": "limitpro-theme.css",
   "javascript": "limitpro-theme.js",
-  "settings": []
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_placeholder",
+      "label": "Show placeholder in theme editor",
+      "default": false
+    }
+  ]
 }
 {% endschema %}

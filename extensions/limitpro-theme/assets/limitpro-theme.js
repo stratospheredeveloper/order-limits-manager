@@ -124,15 +124,17 @@
     return Array.from(new Set(elements.filter(Boolean)));
   }
 
-  function warningMarkup(messages) {
+  function warningMarkup(messages, options = {}) {
+    const placeholderClass = options.placeholder ? ' limitpro-warning--placeholder' : '';
+
     return `
-      <div class="limitpro-warning" role="status" aria-live="polite">
+      <div class="limitpro-warning${placeholderClass}" role="status" aria-live="polite">
         ${messages.map((message) => `<p class="limitpro-warning__message">${escapeHtml(message)}</p>`).join('')}
       </div>
     `;
   }
 
-  function renderWarningHost(host, messages) {
+  function renderWarningHost(host, messages, options = {}) {
     if (!host) {
       return;
     }
@@ -144,7 +146,33 @@
     }
 
     host.hidden = false;
-    host.innerHTML = warningMarkup(messages);
+    host.innerHTML = warningMarkup(messages, options);
+  }
+
+  function isThemeEditor() {
+    return Boolean(window.Shopify && window.Shopify.designMode);
+  }
+
+  function shouldShowProductPlaceholder(root) {
+    return root?.dataset.showPlaceholder === 'true' && isThemeEditor();
+  }
+
+  function renderProductNoticeHost(root, messages) {
+    if (messages.length) {
+      renderWarningHost(root, messages);
+      return;
+    }
+
+    if (shouldShowProductPlaceholder(root)) {
+      renderWarningHost(
+        root,
+        ['limitpro will show the rule description here when the selected quantity violates a rule.'],
+        { placeholder: true }
+      );
+      return;
+    }
+
+    renderWarningHost(root, []);
   }
 
   function checkoutTargets() {
@@ -414,7 +442,7 @@
     }));
 
     if (!contexts.some((context) => context.productId)) {
-      roots.forEach((root) => renderWarningHost(root, []));
+      roots.forEach((root) => renderProductNoticeHost(root, []));
       return;
     }
 
@@ -438,11 +466,11 @@
 
         context.root.dataset.productId = context.productId || '';
         context.root.dataset.variantId = context.variantId;
-        renderWarningHost(context.root, messages);
+        renderProductNoticeHost(context.root, messages);
       });
     } catch (error) {
       console.error('limitpro product warning failed:', error);
-      roots.forEach((root) => renderWarningHost(root, []));
+      roots.forEach((root) => renderProductNoticeHost(root, []));
     }
   }
 

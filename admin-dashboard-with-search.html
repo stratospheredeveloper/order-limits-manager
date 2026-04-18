@@ -487,11 +487,15 @@
             }
 
             if (openMode === 'new-tab') {
-                const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
-                if (newWindow) {
-                    newWindow.opener = null;
-                    return;
-                }
+                const link = document.createElement('a');
+                link.href = absoluteUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                return;
             }
 
             window.location.assign(absoluteUrl);
@@ -822,8 +826,15 @@
                 return;
             }
 
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+
             openNavigation(navigationButton.dataset.openUrl, navigationButton.dataset.openMode || 'new-tab');
-        });
+        }, true);
 
         document.getElementById('create-rule-form').addEventListener('submit', async (event) => {
             event.preventDefault();

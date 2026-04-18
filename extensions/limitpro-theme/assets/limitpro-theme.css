@@ -46,6 +46,10 @@
   margin-top: 6px;
 }
 
+.limitpro-warning--placeholder {
+  opacity: 0.8;
+}
+
 .limitpro-checkout-disabled {
   opacity: 0.55 !important;
   pointer-events: none !important;
