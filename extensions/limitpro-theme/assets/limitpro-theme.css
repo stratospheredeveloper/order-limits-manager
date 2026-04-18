@@ -1,132 +1,36 @@
-[data-limitpro-cart-validator][hidden],
-[data-limitpro-inline-cart-validator][hidden],
-[data-limitpro-product-notice][hidden] {
+[data-limitpro-cart-validator] {
   display: none !important;
 }
 
-[data-limitpro-cart-validator] {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 2147483000;
-  width: min(420px, calc(100vw - 32px));
+[data-limitpro-product-notice][hidden],
+[data-limitpro-cart-item-warning][hidden],
+[data-limitpro-cart-footer-warning][hidden] {
+  display: none !important;
 }
 
-[data-limitpro-inline-cart-validator] {
+[data-limitpro-product-notice],
+[data-limitpro-cart-item-warning],
+[data-limitpro-cart-footer-warning] {
   display: block;
-  margin: 0 0 16px;
+  margin-top: 10px;
 }
 
-.limitpro-banner {
-  border-radius: 16px;
-  background: #202223;
-  color: #ffffff;
-  padding: 18px 18px 16px;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22);
+.limitpro-warning {
+  border-radius: 10px;
+  border: 1px solid #d9b941;
+  background: #fff3b2;
+  color: #6a4f00;
+  padding: 10px 12px;
   font-family: inherit;
-}
-
-.limitpro-banner__title {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 0 0 8px;
-}
-
-.limitpro-banner__summary {
-  font-size: 13px;
-  opacity: 0.82;
-  margin: 0 0 12px;
-}
-
-.limitpro-banner__list {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.limitpro-banner__list li {
   font-size: 13px;
   line-height: 1.45;
-  margin-bottom: 6px;
+}
+
+.limitpro-warning__message + .limitpro-warning__message {
+  margin-top: 6px;
 }
 
 .limitpro-checkout-disabled {
   opacity: 0.55 !important;
-}
-
-[data-limitpro-product-notice] {
-  display: block;
-}
-
-.limitpro-product-card {
-  border: 1px solid #e1e3e5;
-  border-radius: 14px;
-  background: #f6f6f7;
-  padding: 18px;
-  color: #202223;
-}
-
-.limitpro-product-card__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6d7175;
-}
-
-.limitpro-product-card__title {
-  margin: 10px 0 0;
-  font-size: 19px;
-  line-height: 1.25;
-}
-
-.limitpro-product-card__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.limitpro-product-card__metric {
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #e1e3e5;
-  padding: 14px;
-}
-
-.limitpro-product-card__metric-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6d7175;
-}
-
-.limitpro-product-card__metric-value {
-  margin-top: 8px;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.limitpro-product-card__message {
-  margin-top: 16px;
-  font-size: 14px;
-  line-height: 1.55;
-  color: #4f5255;
-}
-
-@media screen and (max-width: 749px) {
-  [data-limitpro-cart-validator] {
-    right: 16px;
-    left: 16px;
-    bottom: 16px;
-    width: auto;
-  }
-
-  .limitpro-product-card__grid {
-    grid-template-columns: 1fr;
-  }
+  pointer-events: none !important;
 }

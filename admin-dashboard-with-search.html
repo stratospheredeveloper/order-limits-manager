@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Limits Manager - Admin Dashboard</title>
+    <title>limitpro</title>
     <style>
         * {
             margin: 0;
@@ -12,155 +12,77 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: #f6f6f7;
             color: #202223;
         }
 
         .header {
-            background: white;
+            background: #ffffff;
             border-bottom: 1px solid #e1e3e5;
             padding: 16px 32px;
-            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
         }
 
         .header h1 {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 600;
-            color: #202223;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1040px;
             margin: 32px auto;
-            padding: 0 32px;
+            padding: 0 20px 48px;
         }
 
         .card {
-            background: white;
-            border-radius: 8px;
+            background: #ffffff;
+            border-radius: 12px;
             padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
 
         .card-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 16px;
-            color: #202223;
+            margin-bottom: 18px;
         }
 
-        .store-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .store-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #eef1ff;
-            color: #2f3a8f;
-            border: 1px solid #d7dcff;
-            border-radius: 999px;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .setup-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .setup-status.connected {
-            background: #d4f5e3;
-            color: #108043;
-        }
-
-        .setup-status.pending {
-            background: #fff4d6;
-            color: #8a6116;
-        }
-
-        .setup-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
-        }
-
-        .setup-step {
-            border: 1px solid #e1e3e5;
-            border-radius: 8px;
-            padding: 18px;
-            background: #fbfbfc;
-        }
-
-        .setup-step-number {
-            width: 32px;
-            height: 32px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            background: #202223;
-            color: white;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .setup-step h3 {
-            font-size: 15px;
-            margin-bottom: 8px;
-        }
-
-        .setup-step p {
+        .card-copy {
             font-size: 14px;
-            line-height: 1.5;
-            color: #4f5255;
-            margin-bottom: 14px;
+            line-height: 1.55;
+            color: #5c5f62;
+            margin-bottom: 18px;
         }
 
-        .setup-meta {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            justify-content: space-between;
-            flex-wrap: wrap;
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 14px;
         }
 
-        .setup-instructions {
-            margin-top: 16px;
-            padding: 16px;
-            border-radius: 8px;
-            background: #f6f6f7;
-            border: 1px solid #e1e3e5;
+        .alert-success {
+            background: #dff7e5;
+            border: 1px solid #bbe5c6;
+            color: #16613b;
         }
 
-        .setup-instructions ol {
-            padding-left: 20px;
-            color: #202223;
-        }
-
-        .setup-instructions li {
-            margin-bottom: 10px;
-            line-height: 1.5;
+        .alert-error {
+            background: #fde1df;
+            border: 1px solid #f6beb9;
+            color: #8d261d;
         }
 
         .form-group {
-            margin-bottom: 20px;
-            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
         }
 
         label {
@@ -168,47 +90,55 @@
             font-size: 14px;
             font-weight: 500;
             margin-bottom: 8px;
+        }
+
+        select,
+        input[type="number"],
+        textarea {
+            width: 100%;
+            border: 1px solid #c9cccf;
+            border-radius: 8px;
+            padding: 11px 12px;
+            font-size: 14px;
+            background: #ffffff;
             color: #202223;
         }
 
-        input[type="text"],
-        input[type="number"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #c9cccf;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        input:focus,
         select:focus,
+        input:focus,
         textarea:focus {
             outline: none;
-            border-color: #5c6ac4;
+            border-color: #008060;
+            box-shadow: 0 0 0 1px #008060;
         }
 
         textarea {
+            min-height: 100px;
             resize: vertical;
-            min-height: 80px;
+        }
+
+        .help-text {
+            font-size: 13px;
+            color: #6d7175;
+            margin-top: 6px;
+            line-height: 1.45;
         }
 
         .button {
-            background: #5c6ac4;
-            color: white;
+            appearance: none;
             border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
+            border-radius: 8px;
+            padding: 10px 14px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: background 0.2s;
+            background: #008060;
+            color: #ffffff;
+            transition: background 0.18s ease;
         }
 
         .button:hover {
-            background: #4a5199;
+            background: #006e52;
         }
 
         .button-secondary {
@@ -218,21 +148,87 @@
         }
 
         .button-secondary:hover {
-            background: #f1f2f3;
+            background: #eeeff0;
         }
 
         .button-danger {
             background: #d82c0d;
-            color: white;
         }
 
         .button-danger:hover {
             background: #b92509;
         }
 
-        .button-small {
-            padding: 6px 12px;
-            font-size: 13px;
+        .button[disabled] {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .setup-step {
+            border: 1px solid #e1e3e5;
+            border-radius: 10px;
+            padding: 18px;
+            background: #fbfbfc;
+        }
+
+        .setup-step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #202223;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .setup-step h3 {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .setup-step p,
+        .setup-note p {
+            font-size: 14px;
+            line-height: 1.55;
+            color: #4f5255;
+            margin-bottom: 12px;
+        }
+
+        .setup-note {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 10px;
+            background: #fff8e0;
+            border: 1px solid #ead48b;
+        }
+
+        .loading,
+        .empty-state {
+            text-align: center;
+            padding: 28px 18px;
+            color: #6d7175;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #202223;
         }
 
         table {
@@ -244,401 +240,163 @@
             text-align: left;
             padding: 12px;
             border-bottom: 2px solid #e1e3e5;
-            font-size: 13px;
-            font-weight: 600;
-            color: #6d7175;
+            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.04em;
+            color: #6d7175;
         }
 
         td {
-            padding: 16px 12px;
+            padding: 14px 12px;
             border-bottom: 1px solid #e1e3e5;
             font-size: 14px;
+            vertical-align: top;
         }
 
-        tr:hover {
-            background: #f9fafb;
+        .rule-message {
+            max-width: 280px;
+            color: #4f5255;
+            line-height: 1.45;
         }
 
         .badge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
             padding: 4px 8px;
-            border-radius: 4px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .badge-success {
-            background: #aee9d1;
-            color: #108043;
+            background: #dff7e5;
+            color: #16613b;
         }
 
         .badge-warning {
-            background: #ffea8a;
+            background: #fff1cc;
             color: #8a6116;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 48px 24px;
-            color: #6d7175;
-        }
-
-        .empty-state h3 {
-            font-size: 18px;
-            margin-bottom: 8px;
-            color: #202223;
-        }
-
-        .alert {
-            padding: 12px 16px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .alert-success {
-            background: #d4f5e3;
-            color: #108043;
-            border: 1px solid #aee9d1;
-        }
-
-        .alert-error {
-            background: #fed3d1;
-            color: #b92509;
-            border: 1px solid #fead9a;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid #e1e3e5;
-        }
-
-        .tab {
-            padding: 12px 20px;
-            background: none;
-            border: none;
-            border-bottom: 2px solid transparent;
-            color: #6d7175;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tab.active {
-            color: #5c6ac4;
-            border-bottom-color: #5c6ac4;
-        }
-
-        .tab:hover {
-            color: #202223;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .help-text {
-            font-size: 13px;
-            color: #6d7175;
-            margin-top: 4px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 24px;
-            color: #6d7175;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        /* Product Search Autocomplete */
-        .autocomplete-wrapper {
-            position: relative;
-        }
-
-        .autocomplete-results {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #c9cccf;
-            border-top: none;
-            border-radius: 0 0 4px 4px;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: none;
-        }
-
-        .autocomplete-results.active {
-            display: block;
-        }
-
-        .autocomplete-item {
-            width: 100%;
-            padding: 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #f1f2f3;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: none;
-            border-left: none;
-            border-right: none;
-            text-align: left;
-        }
-
-        .autocomplete-item:hover {
-            background: #f9fafb;
-        }
-
-        .autocomplete-item img {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-
-        .autocomplete-item-text {
-            flex: 1;
-        }
-
-        .autocomplete-item-title {
-            font-weight: 500;
-            font-size: 14px;
-            color: #202223;
-        }
-
-        .autocomplete-item-id {
-            font-size: 12px;
-            color: #6d7175;
-        }
-
-        .autocomplete-item-subtitle {
-            font-size: 12px;
-            color: #6d7175;
-            margin-top: 2px;
-        }
-
-        .selected-product {
-            display: none;
-            padding: 12px;
-            background: #f9fafb;
-            border: 1px solid #e1e3e5;
-            border-radius: 4px;
-            margin-top: 8px;
-        }
-
-        .selected-product.active {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .selected-product img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-
-        .selected-product-info {
-            flex: 1;
-        }
-
-        .selected-product-title {
-            font-weight: 600;
-            font-size: 14px;
-            color: #202223;
-        }
-
-        .selected-product-id {
-            font-size: 12px;
-            color: #6d7175;
-            margin-top: 2px;
-        }
-
-        .remove-product {
-            color: #d82c0d;
-            cursor: pointer;
-            font-size: 20px;
-            padding: 4px 8px;
-        }
-
         @media (max-width: 768px) {
+            .header {
+                padding: 14px 16px;
+            }
+
+            .container {
+                margin-top: 20px;
+                padding: 0 14px 32px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
             .form-row {
                 grid-template-columns: 1fr;
             }
 
-            .container {
-                padding: 0 16px;
+            table,
+            thead,
+            tbody,
+            tr,
+            th,
+            td {
+                display: block;
+                width: 100%;
             }
 
-            table {
-                font-size: 13px;
+            thead {
+                display: none;
+            }
+
+            td {
+                padding: 10px 0;
             }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🎯 Order Limits Manager</h1>
+        <h1>limitpro</h1>
     </div>
 
     <div class="container">
         <div id="alert-container"></div>
 
         <div class="card">
-            <div class="store-meta">
-                <div class="store-pill">Connected store: <span id="connected-shop"></span></div>
-                <button class="button button-secondary" type="button" onclick="refreshData()">Refresh data</button>
-            </div>
+            <div class="card-title">create rule</div>
+            <p class="card-copy">Create the product, variant, or cart rule first. After that, turn on the cart validator and test the storefront flow.</p>
+
+            <form id="create-rule-form">
+                <div class="form-group">
+                    <label for="rule-type">rule type</label>
+                    <select id="rule-type" required>
+                        <option value="product">product</option>
+                        <option value="variant">variant</option>
+                        <option value="cart">cart-wide</option>
+                    </select>
+                    <div class="help-text">Choose what this limit should apply to.</div>
+                </div>
+
+                <div class="form-group" id="catalog-group">
+                    <label for="catalog-select">choose product</label>
+                    <select id="catalog-select">
+                        <option value="">loading catalog...</option>
+                    </select>
+                    <div class="help-text" id="catalog-help">Choose directly from your shop catalog.</div>
+                </div>
+
+                <input type="hidden" id="target-id">
+                <input type="hidden" id="target-title">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="min-quantity">minimum quantity</label>
+                        <input type="number" id="min-quantity" min="0" placeholder="for example 2">
+                        <div class="help-text">Leave empty if this rule only needs a maximum.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max-quantity">maximum quantity</label>
+                        <input type="number" id="max-quantity" min="0" placeholder="for example 10">
+                        <div class="help-text">Leave empty if this rule only needs a minimum.</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="custom-message">rule description</label>
+                    <textarea id="custom-message" placeholder="This exact message will show on the storefront when the rule is violated."></textarea>
+                    <div class="help-text">Keep this short. limitpro will show this text in the yellow warning box.</div>
+                </div>
+
+                <button type="submit" class="button">create rule</button>
+            </form>
         </div>
 
         <div class="card">
-            <div class="card-title">Theme Setup</div>
-            <div id="theme-setup-loading" class="loading">Checking theme extension setup...</div>
+            <div class="card-title">theme setup</div>
+            <div id="theme-setup-loading" class="loading">loading theme setup...</div>
             <div id="theme-setup"></div>
         </div>
 
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('rules', this)">Order Limits</button>
-            <button class="tab" onclick="switchTab('settings', this)">Global Settings</button>
-        </div>
-
-        <!-- RULES TAB -->
-        <div id="rules-tab" class="tab-content active">
-            <div class="card">
-                <div class="card-title">Create New Order Limit</div>
-                
-                <form id="create-rule-form">
-                    <div class="form-group">
-                        <label for="rule-type">Rule Type</label>
-                        <select id="rule-type" required>
-                            <option value="product">Product</option>
-                            <option value="variant">Variant</option>
-                            <option value="cart">Cart-wide</option>
-                        </select>
-                        <div class="help-text">Choose what this limit applies to</div>
-                    </div>
-
-                    <div class="form-group autocomplete-wrapper" id="product-search-group">
-                        <label for="product-search">Search Product</label>
-                        <input type="text" id="product-search" placeholder="Start typing to search products...">
-                        <div class="autocomplete-results" id="autocomplete-results"></div>
-                        <div class="selected-product" id="selected-product">
-                            <img id="selected-product-image" src="" alt="">
-                            <div class="selected-product-info">
-                                <div class="selected-product-title" id="selected-product-title"></div>
-                                <div class="selected-product-id">ID: <span id="selected-product-id"></span></div>
-                            </div>
-                            <span class="remove-product" onclick="removeSelectedProduct()">✕</span>
-                        </div>
-                        <div class="help-text">Search and select a product from your store</div>
-                    </div>
-
-                    <input type="hidden" id="target-id">
-                    <input type="hidden" id="target-title">
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="min-quantity">Minimum Quantity</label>
-                            <input type="number" id="min-quantity" min="0" placeholder="e.g., 2">
-                            <div class="help-text">Customers must buy at least this many (leave empty for no minimum)</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="max-quantity">Maximum Quantity</label>
-                            <input type="number" id="max-quantity" min="0" placeholder="e.g., 10">
-                            <div class="help-text">Customers can't buy more than this (leave empty for no maximum)</div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="custom-message">Custom Error Message (Optional)</label>
-                        <textarea id="custom-message" placeholder="e.g., Minimum order is 5 units for wholesale customers"></textarea>
-                    </div>
-
-                    <button type="submit" class="button">Create Rule</button>
-                </form>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Active Rules</div>
-                <div id="rules-loading" class="loading">Loading rules...</div>
-                <div id="rules-list"></div>
-            </div>
-        </div>
-
-        <!-- SETTINGS TAB -->
-        <div id="settings-tab" class="tab-content">
-            <div class="card">
-                <div class="card-title">Cart-Wide Limits</div>
-                
-                <form id="settings-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="global-min-cart">Global Minimum Cart Quantity</label>
-                            <input type="number" id="global-min-cart" min="0" placeholder="No minimum">
-                            <div class="help-text">Minimum total items required in cart</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="global-max-cart">Global Maximum Cart Quantity</label>
-                            <input type="number" id="global-max-cart" min="0" placeholder="No maximum">
-                            <div class="help-text">Maximum total items allowed in cart</div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="show-cart-warning" checked>
-                            Show warnings in cart
-                        </label>
-                        <div class="help-text">Display warning messages when limits are violated</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="block-checkout" checked>
-                            Block checkout when limits violated
-                        </label>
-                        <div class="help-text">Prevent customers from checking out if limits aren't met</div>
-                    </div>
-
-                    <button type="submit" class="button">Save Settings</button>
-                </form>
-            </div>
+        <div class="card">
+            <div class="card-title">rules</div>
+            <div id="rules-loading" class="loading">loading rules...</div>
+            <div id="rules-list"></div>
         </div>
     </div>
 
     <script>
         const API_URL = window.location.origin;
         const queryParams = new URLSearchParams(window.location.search);
-        const PRODUCT_PLACEHOLDER = 'https://via.placeholder.com/50';
-        let selectedProduct = null;
-        let searchTimeout = null;
-        let currentSearchResults = [];
+        const catalogCache = {
+            product: null,
+            variant: null,
+        };
+
+        let hasRules = false;
+        let themeSetupContext = null;
 
         function getShopFromHostParam() {
             const hostParam = queryParams.get('host');
@@ -664,28 +422,27 @@
                 .replace(/'/g, '&#39;');
         }
 
-        function renderNavigationButton(label, url, variant = '') {
+        function renderNavigationButton(label, url, variant = '', openMode = 'new-tab', disabled = false) {
             const className = ['button', variant].filter(Boolean).join(' ');
             const normalizedUrl = typeof url === 'string' ? url.trim() : '';
-
-            if (!normalizedUrl) {
-                return `<button type="button" class="${className}" disabled>${escapeHtml(label)}</button>`;
-            }
+            const isDisabled = disabled || !normalizedUrl;
 
             return `
                 <button
                     type="button"
                     class="${className}"
+                    ${isDisabled ? 'disabled' : ''}
                     data-open-url="${escapeHtml(normalizedUrl)}"
+                    data-open-mode="${escapeHtml(openMode)}"
                 >${escapeHtml(label)}</button>
             `;
         }
 
-        function openThemeSetupLink(rawUrl) {
+        function openNavigation(rawUrl, openMode = 'new-tab') {
             const normalizedUrl = typeof rawUrl === 'string' ? rawUrl.trim() : '';
 
             if (!normalizedUrl) {
-                showAlert('This theme editor link is not ready yet. Refresh the page and try again.', 'error');
+                showAlert('This link is not ready yet. Refresh the page and try again.', 'error');
                 return;
             }
 
@@ -694,50 +451,26 @@
             try {
                 absoluteUrl = new URL(normalizedUrl, window.location.origin).toString();
             } catch (error) {
-                console.error('Invalid theme setup link:', normalizedUrl, error);
-                showAlert('The generated theme editor link is invalid. Refresh the page and try again.', 'error');
+                console.error('Invalid navigation link:', normalizedUrl, error);
+                showAlert('This link is invalid. Refresh the page and try again.', 'error');
                 return;
             }
 
-            try {
-                if (window.top && window.top !== window) {
-                    window.top.location.href = absoluteUrl;
+            if (openMode === 'new-tab') {
+                const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+                if (newWindow) {
+                    newWindow.opener = null;
                     return;
                 }
-            } catch (error) {
-                console.warn('Top window navigation failed, falling back to same-window navigation.', error);
             }
 
             window.location.assign(absoluteUrl);
         }
 
-        function getRuleType() {
-            return document.getElementById('rule-type').value;
-        }
-
-        function updateSearchFieldMeta() {
-            const ruleType = getRuleType();
-            const label = document.querySelector('label[for="product-search"]');
-            const input = document.getElementById('product-search');
-            const helpText = document.querySelector('#product-search-group .help-text');
-            const isCartWide = ruleType === 'cart';
-
-            document.getElementById('product-search-group').style.display = isCartWide ? 'none' : 'block';
-
-            if (isCartWide) {
-                removeSelectedProduct();
-                return;
-            }
-
-            if (ruleType === 'variant') {
-                label.textContent = 'Search Variant';
-                input.placeholder = 'Start typing to search variants...';
-                helpText.textContent = 'Search and select a variant from your store';
-            } else {
-                label.textContent = 'Search Product';
-                input.placeholder = 'Start typing to search products...';
-                helpText.textContent = 'Search and select a product from your store';
-            }
+        async function fetchJson(url, options) {
+            const response = await fetch(url, options);
+            const data = await response.json();
+            return { response, data };
         }
 
         function showAlert(message, type = 'success') {
@@ -750,182 +483,181 @@
             setTimeout(() => alert.remove(), 5000);
         }
 
-        function switchTab(tabName, tabButton) {
-            document.querySelectorAll('.tab').forEach((tab) => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach((content) => content.classList.remove('active'));
+        function getRuleType() {
+            return document.getElementById('rule-type').value;
+        }
 
-            tabButton.classList.add('active');
-            document.getElementById(`${tabName}-tab`).classList.add('active');
+        function clearTargetSelection() {
+            document.getElementById('catalog-select').value = '';
+            document.getElementById('target-id').value = '';
+            document.getElementById('target-title').value = '';
+        }
 
-            if (tabName === 'settings') {
-                loadSettings();
+        function catalogLabel(ruleType) {
+            return ruleType === 'variant' ? 'choose variant' : 'choose product';
+        }
+
+        function catalogHelp(ruleType) {
+            return ruleType === 'variant'
+                ? 'Choose directly from your shop variants.'
+                : 'Choose directly from your shop products.';
+        }
+
+        function populateCatalogSelect() {
+            const ruleType = getRuleType();
+            const select = document.getElementById('catalog-select');
+            const entries = catalogCache[ruleType] || [];
+            const placeholder = ruleType === 'variant' ? 'choose a variant' : 'choose a product';
+
+            select.innerHTML = `
+                <option value="">${escapeHtml(entries.length ? placeholder : 'no catalog items found')}</option>
+                ${entries.map((entry) => `
+                    <option value="${escapeHtml(entry.id)}" data-title="${escapeHtml(entry.title)}">
+                        ${escapeHtml(entry.title)}
+                    </option>
+                `).join('')}
+            `;
+        }
+
+        async function loadCatalog(ruleType = getRuleType(), force = false) {
+            if (!force && Array.isArray(catalogCache[ruleType])) {
+                populateCatalogSelect();
+                return;
+            }
+
+            const select = document.getElementById('catalog-select');
+            select.innerHTML = '<option value="">loading catalog...</option>';
+            select.disabled = true;
+
+            try {
+                const { response, data } = await fetchJson(
+                    `${API_URL}/api/products/catalog?shop=${encodeURIComponent(SHOP_ID)}&type=${encodeURIComponent(ruleType)}`
+                );
+
+                if (response.status === 401 && data.authUrl) {
+                    catalogCache[ruleType] = [];
+                    showAlert('Reconnect Shopify to load your catalog.', 'error');
+                    return;
+                }
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load catalog');
+                }
+
+                catalogCache[ruleType] = Array.isArray(data.products) ? data.products : [];
+            } catch (error) {
+                console.error('Error loading catalog:', error);
+                catalogCache[ruleType] = [];
+                showAlert('Failed to load the product catalog.', 'error');
+            } finally {
+                select.disabled = false;
+                populateCatalogSelect();
             }
         }
 
-        async function fetchJson(url, options) {
-            const response = await fetch(url, options);
-            const data = await response.json();
-            return { response, data };
+        function updateCatalogFieldMeta() {
+            const ruleType = getRuleType();
+            const catalogGroup = document.getElementById('catalog-group');
+            const label = document.querySelector('label[for="catalog-select"]');
+            const helpText = document.getElementById('catalog-help');
+            const isCartWide = ruleType === 'cart';
+
+            catalogGroup.style.display = isCartWide ? 'none' : 'block';
+
+            if (isCartWide) {
+                clearTargetSelection();
+                return;
+            }
+
+            label.textContent = catalogLabel(ruleType);
+            helpText.textContent = catalogHelp(ruleType);
+            clearTargetSelection();
+            loadCatalog(ruleType);
+        }
+
+        function renderThemeSetup() {
+            const container = document.getElementById('theme-setup');
+
+            if (!themeSetupContext) {
+                container.innerHTML = '';
+                return;
+            }
+
+            if (themeSetupContext.authRequired) {
+                container.innerHTML = `
+                    <div class="setup-step">
+                        <div class="setup-step-number">1</div>
+                        <h3>Reconnect Shopify</h3>
+                        <p>Reconnect the store before loading the catalog or opening theme setup.</p>
+                        ${renderNavigationButton('Reconnect Shopify', themeSetupContext.authUrl, '', 'same-window')}
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="setup-grid">
+                    <div class="setup-step">
+                        <div class="setup-step-number">1</div>
+                        <h3>create a rule</h3>
+                        <p>${hasRules ? 'A rule is ready. Keep this page open while you finish the theme setup in another tab.' : 'Create at least one rule in limitpro before you save and test the storefront.'}</p>
+                    </div>
+
+                    <div class="setup-step">
+                        <div class="setup-step-number">2</div>
+                        <h3>turn on cart validator</h3>
+                        <p>This opens the theme editor in a new tab so you can get back to limitpro right away.</p>
+                        ${renderNavigationButton('turn on cart validator', themeSetupContext.links?.embed)}
+                    </div>
+
+                    <div class="setup-step">
+                        <div class="setup-step-number">3</div>
+                        <h3>save and test</h3>
+                        <p>Save the theme, then test the storefront and cart only after you have at least one rule created.</p>
+                        <div class="button-group">
+                            ${renderNavigationButton('open storefront', themeSetupContext.links?.storefront, 'button-secondary', 'new-tab', !hasRules)}
+                            ${renderNavigationButton('open cart', themeSetupContext.links?.cart, 'button-secondary', 'new-tab', !hasRules)}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-note">
+                    <p>If you want to place the product warning manually, use the product block and move it under product information, below the buy buttons.</p>
+                    ${renderNavigationButton('add product block', themeSetupContext.links?.block, 'button-secondary')}
+                </div>
+            `;
         }
 
         async function loadThemeSetup() {
             const loading = document.getElementById('theme-setup-loading');
-            const container = document.getElementById('theme-setup');
 
             loading.style.display = 'block';
-            container.innerHTML = '';
 
             try {
                 const { response, data } = await fetchJson(`${API_URL}/api/theme/setup?shop=${encodeURIComponent(SHOP_ID)}`);
 
                 if (response.status === 401 && data.authUrl) {
-                    container.innerHTML = `
-                        <div class="setup-meta">
-                            <span class="setup-status pending">Shopify access required</span>
-                            ${renderNavigationButton('Reconnect Shopify', data.authUrl)}
-                        </div>
-                        <div class="setup-instructions">
-                            <ol>
-                                <li>Reconnect the store so LimitPro can load live products and your active theme.</li>
-                                <li>After reconnecting, use the setup links below to enable the app embed and preview the product app block.</li>
-                            </ol>
-                        </div>
-                    `;
+                    themeSetupContext = {
+                        authRequired: true,
+                        authUrl: data.authUrl,
+                    };
                     return;
                 }
 
-                const themeName = data.theme?.name ? escapeHtml(data.theme.name) : 'Current live theme';
-                const themeBadge = data.theme?.name
-                    ? `<span class="setup-status connected">Live theme: ${themeName}</span>`
-                    : '<span class="setup-status connected">Live theme link ready</span>';
-
-                container.innerHTML = `
-                    <div class="setup-meta">
-                        ${themeBadge}
-                        ${renderNavigationButton('Open Theme Editor', data.links?.themeEditor, 'button-secondary')}
-                    </div>
-
-                    <div class="setup-grid">
-                        <div class="setup-step">
-                            <div class="setup-step-number">1</div>
-                            <h3>Required: turn on Cart validator</h3>
-                            <p>This is the only step most merchants need. Once enabled, LimitPro validates cart rules, blocks checkout when needed, and can show product guidance automatically without theme edits.</p>
-                            ${renderNavigationButton('Enable Cart Validator', data.links?.embed)}
-                        </div>
-
-                        <div class="setup-step">
-                            <div class="setup-step-number">2</div>
-                            <h3>Optional: place the product block manually</h3>
-                            <p>Only use this if you want the product notice in a specific spot in an Online Store 2.0 theme. Otherwise, the app embed can handle product guidance automatically.</p>
-                            ${renderNavigationButton('Add Product Block', data.links?.block, 'button-secondary')}
-                        </div>
-
-                        <div class="setup-step">
-                            <div class="setup-step-number">3</div>
-                            <h3>Save and test</h3>
-                            <p>After saving, open the storefront, add products with active rules, and confirm the warning text and checkout behavior match what you saved in LimitPro.</p>
-                            <div class="button-group">
-                                ${renderNavigationButton('Open Storefront', data.links?.storefront, 'button-secondary')}
-                                ${renderNavigationButton('Open Cart', data.links?.cart, 'button-secondary')}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="setup-instructions">
-                        <ol>
-                            <li>In Theme settings &gt; App embeds, turn on <strong>Cart validator</strong>, then click <strong>Save</strong>. This is the required step for every store.</li>
-                            <li>Product-level guidance can now appear automatically when the embed is on. Add the <strong>Product limit notice</strong> block only if you want to control its exact placement in the theme editor.</li>
-                            <li>After saving, test both states: a valid cart and a blocked cart. Your custom rule messages are controlled in LimitPro, not in the theme editor.</li>
-                        </ol>
-                    </div>
-                `;
+                themeSetupContext = {
+                    authRequired: false,
+                    links: data.links || {},
+                };
             } catch (error) {
                 console.error('Error loading theme setup:', error);
-                container.innerHTML = `
-                    <div class="setup-meta">
-                        <span class="setup-status pending">Theme setup unavailable</span>
-                    </div>
-                    <div class="setup-instructions">
-                        <ol>
-                            <li>Reconnect the store if prompted.</li>
-                            <li>Then enable the app embed in Theme settings &gt; App embeds and save the theme.</li>
-                        </ol>
-                    </div>
-                `;
+                themeSetupContext = {
+                    authRequired: true,
+                    authUrl: `/api/auth?shop=${encodeURIComponent(SHOP_ID)}`,
+                };
             } finally {
                 loading.style.display = 'none';
+                renderThemeSetup();
             }
-        }
-
-        function renderAutocompleteResults(products) {
-            const resultsContainer = document.getElementById('autocomplete-results');
-            currentSearchResults = products;
-
-            if (products.length === 0) {
-                resultsContainer.innerHTML = '<div style="padding: 12px; color: #6d7175;">No results found</div>';
-                resultsContainer.classList.add('active');
-                return;
-            }
-
-            resultsContainer.innerHTML = products.map((product, index) => `
-                <button type="button" class="autocomplete-item" data-result-index="${index}">
-                    <img src="${escapeHtml(product.image || PRODUCT_PLACEHOLDER)}" alt="${escapeHtml(product.title)}">
-                    <div class="autocomplete-item-text">
-                        <div class="autocomplete-item-title">${escapeHtml(product.title)}</div>
-                        <div class="autocomplete-item-id">ID: ${escapeHtml(product.id)}</div>
-                        ${product.subtitle ? `<div class="autocomplete-item-subtitle">${escapeHtml(product.subtitle)}</div>` : ''}
-                    </div>
-                </button>
-            `).join('');
-
-            resultsContainer.classList.add('active');
-        }
-
-        async function searchProducts(query) {
-            try {
-                const ruleType = getRuleType();
-                const { response, data } = await fetchJson(
-                    `${API_URL}/api/products/search?shop=${encodeURIComponent(SHOP_ID)}&type=${encodeURIComponent(ruleType)}&q=${encodeURIComponent(query)}`
-                );
-
-                if (response.status === 401 && data.authUrl) {
-                    showAlert('Reconnect Shopify to load live products from the store.', 'error');
-                    window.location.href = data.authUrl;
-                    return;
-                }
-
-                if (data.success) {
-                    renderAutocompleteResults(data.products);
-                }
-            } catch (error) {
-                console.error('Search error:', error);
-                showAlert('Failed to search products', 'error');
-            }
-        }
-
-        function selectProduct(product) {
-            selectedProduct = product;
-
-            document.getElementById('product-search').value = product.title;
-            document.getElementById('autocomplete-results').classList.remove('active');
-            document.getElementById('target-id').value = product.id;
-            document.getElementById('target-title').value = product.title;
-            document.getElementById('selected-product-image').src = product.image || PRODUCT_PLACEHOLDER;
-            document.getElementById('selected-product-title').textContent = product.title;
-            document.getElementById('selected-product-id').textContent = product.id;
-            document.getElementById('selected-product').classList.add('active');
-            document.getElementById('product-search').style.display = 'none';
-        }
-
-        function removeSelectedProduct() {
-            selectedProduct = null;
-            currentSearchResults = [];
-            document.getElementById('product-search').value = '';
-            document.getElementById('product-search').style.display = 'block';
-            document.getElementById('target-id').value = '';
-            document.getElementById('target-title').value = '';
-            document.getElementById('selected-product').classList.remove('active');
-            document.getElementById('autocomplete-results').classList.remove('active');
         }
 
         async function loadRules() {
@@ -933,11 +665,15 @@
                 const { data } = await fetchJson(`${API_URL}/api/rules?shop=${encodeURIComponent(SHOP_ID)}`);
                 document.getElementById('rules-loading').style.display = 'none';
 
-                if (!data.success || data.rules.length === 0) {
+                const rules = data.success ? data.rules : [];
+                hasRules = rules.length > 0;
+                renderThemeSetup();
+
+                if (!rules.length) {
                     document.getElementById('rules-list').innerHTML = `
                         <div class="empty-state">
-                            <h3>No rules yet</h3>
-                            <p>Create your first order limit rule above</p>
+                            <h3>no rules yet</h3>
+                            <p>Create your first rule above, then turn on the cart validator.</p>
                         </div>
                     `;
                     return;
@@ -947,34 +683,34 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Target</th>
-                                <th>Type</th>
-                                <th>Min Qty</th>
-                                <th>Max Qty</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th>target</th>
+                                <th>type</th>
+                                <th>minimum</th>
+                                <th>maximum</th>
+                                <th>message</th>
+                                <th>status</th>
+                                <th>actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${data.rules.map((rule) => `
+                            ${rules.map((rule) => `
                                 <tr>
-                                    <td>${escapeHtml(rule.targetTitle || 'Cart-wide')}</td>
+                                    <td>${escapeHtml(rule.targetTitle || 'cart-wide')}</td>
                                     <td>${escapeHtml(rule.ruleType)}</td>
                                     <td>${escapeHtml(rule.minQuantity || '-')}</td>
                                     <td>${escapeHtml(rule.maxQuantity || '-')}</td>
+                                    <td class="rule-message">${escapeHtml(rule.message || '-')}</td>
                                     <td>
                                         <span class="badge ${rule.enabled ? 'badge-success' : 'badge-warning'}">
-                                            ${rule.enabled ? 'Active' : 'Inactive'}
+                                            ${rule.enabled ? 'active' : 'inactive'}
                                         </span>
                                     </td>
                                     <td>
                                         <div class="button-group">
-                                            <button class="button button-small button-secondary" onclick="toggleRule('${rule.id}', ${!rule.enabled})">
-                                                ${rule.enabled ? 'Disable' : 'Enable'}
+                                            <button class="button button-secondary" onclick="toggleRule('${rule.id}', ${!rule.enabled})">
+                                                ${rule.enabled ? 'disable' : 'enable'}
                                             </button>
-                                            <button class="button button-small button-danger" onclick="deleteRule('${rule.id}')">
-                                                Delete
-                                            </button>
+                                            <button class="button button-danger" onclick="deleteRule('${rule.id}')">delete</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -984,29 +720,8 @@
                 `;
             } catch (error) {
                 console.error('Error loading rules:', error);
-                showAlert('Failed to load rules', 'error');
+                showAlert('Failed to load rules.', 'error');
             }
-        }
-
-        async function loadSettings() {
-            try {
-                const { data } = await fetchJson(`${API_URL}/api/settings?shop=${encodeURIComponent(SHOP_ID)}`);
-
-                if (data.success) {
-                    const settings = data.settings;
-                    document.getElementById('global-min-cart').value = settings.globalMinCart || '';
-                    document.getElementById('global-max-cart').value = settings.globalMaxCart || '';
-                    document.getElementById('show-cart-warning').checked = settings.showCartWarning ?? true;
-                    document.getElementById('block-checkout').checked = settings.blockCheckout ?? true;
-                }
-            } catch (error) {
-                console.error('Error loading settings:', error);
-            }
-        }
-
-        async function refreshData() {
-            await Promise.all([loadThemeSetup(), loadRules(), loadSettings()]);
-            showAlert('Data refreshed');
         }
 
         async function toggleRule(ruleId, enabled) {
@@ -1017,74 +732,57 @@
                     body: JSON.stringify({ enabled }),
                 });
 
-                if (data.success) {
-                    showAlert(`Rule ${enabled ? 'enabled' : 'disabled'} successfully!`);
-                    loadRules();
-                } else {
-                    showAlert('Failed to update rule', 'error');
+                if (!data.success) {
+                    throw new Error('Failed to update rule');
                 }
+
+                showAlert(`Rule ${enabled ? 'enabled' : 'disabled'}.`);
+                loadRules();
             } catch (error) {
                 console.error('Error updating rule:', error);
-                showAlert('Failed to update rule', 'error');
+                showAlert('Failed to update the rule.', 'error');
             }
         }
 
         async function deleteRule(ruleId) {
-            if (!confirm('Are you sure you want to delete this rule?')) return;
+            if (!confirm('Delete this rule?')) {
+                return;
+            }
 
             try {
                 const { data } = await fetchJson(`${API_URL}/api/rules/${ruleId}`, {
                     method: 'DELETE',
                 });
 
-                if (data.success) {
-                    showAlert('Rule deleted successfully!');
-                    loadRules();
-                } else {
-                    showAlert('Failed to delete rule', 'error');
+                if (!data.success) {
+                    throw new Error('Failed to delete rule');
                 }
+
+                showAlert('Rule deleted.');
+                loadRules();
             } catch (error) {
                 console.error('Error deleting rule:', error);
-                showAlert('Failed to delete rule', 'error');
+                showAlert('Failed to delete the rule.', 'error');
             }
         }
 
         document.getElementById('rule-type').addEventListener('change', () => {
-            updateSearchFieldMeta();
+            updateCatalogFieldMeta();
         });
 
-        document.getElementById('product-search').addEventListener('input', (event) => {
-            const query = event.target.value.trim();
-            clearTimeout(searchTimeout);
-
-            if (query.length < 2) {
-                document.getElementById('autocomplete-results').classList.remove('active');
-                return;
-            }
-
-            searchTimeout = setTimeout(() => searchProducts(query), 300);
-        });
-
-        document.getElementById('autocomplete-results').addEventListener('click', (event) => {
-            const resultButton = event.target.closest('[data-result-index]');
-            if (!resultButton) return;
-
-            const product = currentSearchResults[Number(resultButton.dataset.resultIndex)];
-            if (product) {
-                selectProduct(product);
-            }
+        document.getElementById('catalog-select').addEventListener('change', (event) => {
+            const selectedOption = event.target.selectedOptions[0];
+            document.getElementById('target-id').value = selectedOption?.value || '';
+            document.getElementById('target-title').value = selectedOption?.dataset.title || '';
         });
 
         document.addEventListener('click', (event) => {
             const navigationButton = event.target.closest('[data-open-url]');
-            if (navigationButton) {
-                openThemeSetupLink(navigationButton.dataset.openUrl);
+            if (!navigationButton || navigationButton.disabled) {
                 return;
             }
 
-            if (!event.target.closest('.autocomplete-wrapper')) {
-                document.getElementById('autocomplete-results').classList.remove('active');
-            }
+            openNavigation(navigationButton.dataset.openUrl, navigationButton.dataset.openMode || 'new-tab');
         });
 
         document.getElementById('create-rule-form').addEventListener('submit', async (event) => {
@@ -1095,10 +793,10 @@
             const targetTitle = document.getElementById('target-title').value;
             const minQuantity = document.getElementById('min-quantity').value;
             const maxQuantity = document.getElementById('max-quantity').value;
-            const message = document.getElementById('custom-message').value;
+            const message = document.getElementById('custom-message').value.trim();
 
             if (ruleType !== 'cart' && !targetId) {
-                showAlert(ruleType === 'variant' ? 'Please select a variant' : 'Please select a product', 'error');
+                showAlert(ruleType === 'variant' ? 'Please choose a variant.' : 'Please choose a product.', 'error');
                 return;
             }
 
@@ -1117,63 +815,27 @@
                     }),
                 });
 
-                if (data.success) {
-                    showAlert('Rule created successfully!');
-                    event.target.reset();
-                    removeSelectedProduct();
-                    updateSearchFieldMeta();
-                    loadRules();
-                } else {
-                    showAlert('Failed to create rule', 'error');
+                if (!data.success) {
+                    throw new Error('Failed to create rule');
                 }
+
+                event.target.reset();
+                clearTargetSelection();
+                updateCatalogFieldMeta();
+                showAlert('Rule created.');
+                loadRules();
             } catch (error) {
                 console.error('Error creating rule:', error);
-                showAlert('Failed to create rule', 'error');
+                showAlert('Failed to create the rule.', 'error');
             }
         });
 
-        document.getElementById('settings-form').addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const globalMinCart = document.getElementById('global-min-cart').value;
-            const globalMaxCart = document.getElementById('global-max-cart').value;
-            const showCartWarning = document.getElementById('show-cart-warning').checked;
-            const blockCheckout = document.getElementById('block-checkout').checked;
-
-            try {
-                const { data } = await fetchJson(`${API_URL}/api/settings`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        shop: SHOP_ID,
-                        globalMinCart: globalMinCart || null,
-                        globalMaxCart: globalMaxCart || null,
-                        showCartWarning,
-                        blockCheckout,
-                    }),
-                });
-
-                if (data.success) {
-                    showAlert('Settings saved successfully!');
-                } else {
-                    showAlert('Failed to save settings', 'error');
-                }
-            } catch (error) {
-                console.error('Error saving settings:', error);
-                showAlert('Failed to save settings', 'error');
-            }
-        });
-
-        document.getElementById('connected-shop').textContent = SHOP_ID;
-        updateSearchFieldMeta();
+        updateCatalogFieldMeta();
         loadThemeSetup();
         loadRules();
-        loadSettings();
 
         window.toggleRule = toggleRule;
         window.deleteRule = deleteRule;
-        window.removeSelectedProduct = removeSelectedProduct;
-        window.refreshData = refreshData;
     </script>
 </body>
 </html>

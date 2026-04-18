@@ -59,6 +59,31 @@ const SEARCH_PRODUCTS_QUERY = `
   }
 `;
 
+const PRODUCT_CATALOG_QUERY = `
+  query LimitProProductCatalog($after: String) {
+    products(first: 100, after: $after, sortKey: TITLE) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        id
+        title
+        featuredImage {
+          url
+        }
+        variants(first: 100) {
+          nodes {
+            id
+            title
+            displayName
+          }
+        }
+      }
+    }
+  }
+`;
+
 const THEME_SETUP_QUERY = `
   query LimitProThemeSetup {
     themes(first: 20) {
@@ -243,7 +268,7 @@ function buildThemeSetupLinks(shop, themeNumericId = 'current') {
   return {
     auth: `/api/auth?shop=${encodeURIComponent(shop)}`,
     embed: `${embedBase}?context=apps&template=product&activateAppId=${encodeURIComponent(`${apiKey}/${THEME_EMBED_HANDLE}`)}`,
-    block: `${embedBase}?template=product&addAppBlockId=${encodeURIComponent(`${apiKey}/${THEME_BLOCK_HANDLE}`)}&target=newAppsSection`,
+    block: `${embedBase}?template=product&addAppBlockId=${encodeURIComponent(`${apiKey}/${THEME_BLOCK_HANDLE}`)}&target=mainSection`,
     themeEditor: `${embedBase}`,
     storefront: `https://${shop}`,
     cart: `https://${shop}/cart`,
@@ -307,6 +332,50 @@ function aggregateProductRuleSummary(rules) {
     maxQuantity,
     message: messages[0] || null,
   };
+}
+
+function buildCatalogEntries(products, ruleType) {
+  if (ruleType === 'variant') {
+    return products.flatMap((product) => (
+      (product.variants?.nodes || []).map((variant) => {
+        const variantTitle = variant.displayName || variant.title || 'Default variant';
+        const title = variantTitle === 'Default Title'
+          ? product.title
+          : `${product.title} - ${variantTitle}`;
+
+        return {
+          id: extractNumericId(variant.id),
+          title,
+        };
+      })
+    ));
+  }
+
+  return products.map((product) => ({
+    id: extractNumericId(product.id),
+    title: product.title,
+  }));
+}
+
+async function loadCatalogProducts(session, maxProducts = 250) {
+  const products = [];
+  let after = null;
+
+  while (products.length < maxProducts) {
+    const data = await runAdminQuery(session, PRODUCT_CATALOG_QUERY, { after });
+    const connection = data.products;
+    const nodes = connection?.nodes || [];
+
+    products.push(...nodes);
+
+    if (!connection?.pageInfo?.hasNextPage || !connection?.pageInfo?.endCursor) {
+      break;
+    }
+
+    after = connection.pageInfo.endCursor;
+  }
+
+  return products.slice(0, maxProducts);
 }
 
 // Middleware
@@ -495,6 +564,41 @@ app.get('/api/products/search', async (req, res) => {
   } catch (error) {
     console.error('Error searching products:', error);
     res.status(500).json({ success: false, error: 'Failed to search products' });
+  }
+});
+
+// API: Load product catalog for dropdowns
+app.get('/api/products/catalog', async (req, res) => {
+  try {
+    const shop = sanitizeShop(req.query.shop, false);
+    const ruleType = req.query.type === 'variant' ? 'variant' : 'product';
+
+    if (!shop) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing or invalid shop parameter',
+      });
+    }
+
+    const session = await getOfflineSession(shop);
+
+    if (!session) {
+      return res.status(401).json({
+        success: false,
+        error: 'Shop authentication required',
+        authUrl: `/api/auth?shop=${encodeURIComponent(shop)}`,
+      });
+    }
+
+    const products = await loadCatalogProducts(session);
+
+    res.json({
+      success: true,
+      products: buildCatalogEntries(products, ruleType),
+    });
+  } catch (error) {
+    console.error('Error loading product catalog:', error);
+    res.status(500).json({ success: false, error: 'Failed to load product catalog' });
   }
 });
 
@@ -699,7 +803,7 @@ app.post('/api/validate-cart', async (req, res) => {
       variant_id: item.variant_id?.toString() || null,
     }));
 
-    for (const item of normalizedItems) {
+    for (const [itemIndex, item] of normalizedItems.entries()) {
       const matchingRules = [];
       const seenRuleIds = new Set();
 
@@ -726,8 +830,12 @@ app.post('/api/validate-cart', async (req, res) => {
       for (const rule of matchingRules) {
         if (rule.minQuantity && item.quantity < rule.minQuantity) {
           violations.push({
+            scope: 'item',
             type: 'min',
             item: item.title,
+            itemIndex,
+            productId: item.product_id,
+            variantId: item.variant_id,
             limit: rule.minQuantity,
             current: item.quantity,
             message: rule.message || `Minimum quantity for ${item.title} is ${rule.minQuantity}`,
@@ -736,8 +844,12 @@ app.post('/api/validate-cart', async (req, res) => {
 
         if (rule.maxQuantity && item.quantity > rule.maxQuantity) {
           violations.push({
+            scope: 'item',
             type: 'max',
             item: item.title,
+            itemIndex,
+            productId: item.product_id,
+            variantId: item.variant_id,
             limit: rule.maxQuantity,
             current: item.quantity,
             message: rule.message || `Maximum quantity for ${item.title} is ${rule.maxQuantity}`,
@@ -751,6 +863,7 @@ app.post('/api/validate-cart', async (req, res) => {
     for (const rule of cartRules) {
       if (rule.minQuantity && totalQuantity < rule.minQuantity) {
         violations.push({
+          scope: 'cart',
           type: 'cart_min',
           limit: rule.minQuantity,
           current: totalQuantity,
@@ -760,6 +873,7 @@ app.post('/api/validate-cart', async (req, res) => {
 
       if (rule.maxQuantity && totalQuantity > rule.maxQuantity) {
         violations.push({
+          scope: 'cart',
           type: 'cart_max',
           limit: rule.maxQuantity,
           current: totalQuantity,
@@ -770,6 +884,7 @@ app.post('/api/validate-cart', async (req, res) => {
 
     if (settings?.globalMinCart && totalQuantity < settings.globalMinCart) {
       violations.push({
+        scope: 'cart',
         type: 'cart_min',
         limit: settings.globalMinCart,
         current: totalQuantity,
@@ -779,6 +894,7 @@ app.post('/api/validate-cart', async (req, res) => {
 
     if (settings?.globalMaxCart && totalQuantity > settings.globalMaxCart) {
       violations.push({
+        scope: 'cart',
         type: 'cart_max',
         limit: settings.globalMaxCart,
         current: totalQuantity,
@@ -839,6 +955,9 @@ app.get('/api/storefront/product-rules', async (req, res) => {
         OR: ruleTargets,
       },
       select: {
+        id: true,
+        ruleType: true,
+        targetId: true,
         minQuantity: true,
         maxQuantity: true,
         message: true,
@@ -848,6 +967,14 @@ app.get('/api/storefront/product-rules', async (req, res) => {
     res.json({
       success: true,
       ...aggregateProductRuleSummary(rules),
+      rules: rules.map((rule) => ({
+        id: rule.id,
+        ruleType: rule.ruleType,
+        targetId: rule.targetId,
+        minQuantity: rule.minQuantity,
+        maxQuantity: rule.maxQuantity,
+        message: rule.message || null,
+      })),
     });
   } catch (error) {
     console.error('Error loading product rule summary:', error);
