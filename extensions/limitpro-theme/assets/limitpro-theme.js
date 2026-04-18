@@ -21,6 +21,8 @@
   let productRuleCacheKey = null;
   let productRuleCache = [];
   let pendingProductWarningRefresh = null;
+  let productStateWatchId = null;
+  let lastProductStateSignature = '';
 
   const productFormSelectors = [
     'product-form',
@@ -260,6 +262,37 @@
       pendingProductWarningRefresh = null;
       renderProductWarnings();
     }, 140);
+  }
+
+  function productStateSignature() {
+    const roots = productNoticeRoots();
+    if (!roots.length) {
+      return '';
+    }
+
+    return roots.map((root) => [
+      currentProductId(root) || '',
+      currentVariantId(root) || '',
+      currentProductQuantity(root),
+    ].join('::')).join('|');
+  }
+
+  function startProductStateWatch() {
+    if (productStateWatchId) {
+      return;
+    }
+
+    lastProductStateSignature = productStateSignature();
+
+    productStateWatchId = window.setInterval(() => {
+      const nextSignature = productStateSignature();
+      if (nextSignature === lastProductStateSignature) {
+        return;
+      }
+
+      lastProductStateSignature = nextSignature;
+      renderProductWarnings();
+    }, 250);
   }
 
   function findProductNoticeMount() {
@@ -767,4 +800,5 @@
   initProductListeners();
   initCartListeners();
   renderProductWarnings();
+  startProductStateWatch();
 })();
